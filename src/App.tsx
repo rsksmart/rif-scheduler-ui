@@ -1,25 +1,37 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { ThemeProvider } from '@material-ui/core/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import theme from './assets/theme'
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Redirect
+} from "react-router-dom";
+import Schedule from "./schedule/Schedule";
+import Providers from './providers/Providers';
+import Contracts from './contracts/Contracts';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline/>
+      <Router>
+        <Switch>
+          <Route exact path="/">
+            <Schedule />
+          </Route>
+          <Route exact path="/providers">
+            <Providers />
+          </Route>
+          <Route exact path="/contracts">
+            <Contracts />
+          </Route>
+          <Route path="*">
+            <Redirect to="/"/>
+          </Route>
+        </Switch>
+      </Router>
+    </ThemeProvider>
   );
 }
 
