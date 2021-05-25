@@ -1,101 +1,127 @@
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import RefreshIcon from '@material-ui/icons/Refresh';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import IconButton from '@material-ui/core/IconButton';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import Divider from '@material-ui/core/Divider';
-import { teal, yellow, orange } from '@material-ui/core/colors';
+import { makeStyles, Theme, createStyles } from "@material-ui/core/styles";
+import ListSubheader from "@material-ui/core/ListSubheader";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
+import RefreshIcon from "@material-ui/icons/Refresh";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import IconButton from "@material-ui/core/IconButton";
+import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
+import CardContent from "@material-ui/core/CardContent";
+import Divider from "@material-ui/core/Divider";
+import useSchedule, { IScheduleItem } from "./useSchedule";
+import { format, parseISO, compareAsc } from "date-fns";
+import { ExecutionState, ExecutionStateDescriptions } from "../shared/types";
+import useProviders, { IProvider } from "../providers/useProviders";
+import useContracts, { IContract } from "../contracts/useContracts";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      width: '100%',
+      width: "100%",
       padding: 5,
-      gap: '5px',
-      display: 'flex',
-      flexDirection: 'column'
+      gap: "5px",
+      display: "flex",
+      flexDirection: "column",
     },
-    
-  }),
+  })
 );
 
 const useRowStyles = makeStyles((theme: Theme) =>
   createStyles({
     part: {
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1
+      display: "flex",
+      flexDirection: "column",
+      flex: 1,
     },
-    row: ({ color = '#fff' }: any) => ({
-        borderLeft: `${color} 4px solid`, borderBottom: `${color} 1px solid`, borderRadius: 15
-    })
-  }),
+    row: ({ color = "#fff" }: any) => ({
+      borderLeft: `${color} 4px solid`,
+      borderBottom: `${color} 1px solid`,
+      borderRadius: 15,
+    }),
+  })
 );
 
-const Item = ({ color }: any) => {
-    const classes = useRowStyles({ color });
+const Item: React.FC<{
+  item: IScheduleItem;
+  contract: IContract;
+  provider: IProvider;
+}> = ({ item, contract, provider }) => {
+  const classes = useRowStyles({ color: item.color });
 
-    return (
-        <ListItem button className={classes.row}>
-            <ListItemText primary="Title" secondary="ExecuteAt | Status" className={classes.part} />
-            <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
-            <ListItemText primary="Contract" secondary="Network | Provider" className={classes.part} />
-            <ListItemSecondaryAction>
-                <IconButton edge="end">
-                    <RefreshIcon style={{ color }} />
-                </IconButton>
-            </ListItemSecondaryAction>
-        </ListItem>
-    )
+  return (
+    <ListItem button className={classes.row}>
+      <ListItemText
+        primary={item.title}
+        secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")} | ${
+          ExecutionStateDescriptions[item.state ?? ExecutionState.Scheduled]
+        }`}
+        className={classes.part}
+      />
+      <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
+      <ListItemText
+        primary={contract.name}
+        secondary={`${item.network} | ${provider.name}`}
+        className={classes.part}
+      />
+      <ListItemSecondaryAction>
+        <IconButton edge="end">
+          <RefreshIcon style={{ color: item.color }} />
+        </IconButton>
+      </ListItemSecondaryAction>
+    </ListItem>
+  );
+};
+
+interface IGroupBy {
+  [group: string]: IScheduleItem[];
 }
 
 const History = () => {
   const classes = useStyles();
 
+  const scheduleItems = useSchedule((state) => state.scheduleItems);
+  const contracts = useContracts((state) => state.contracts);
+  const providers = useProviders((state) => state.providers);
+
+  const itemsGroupedByMonth: IGroupBy = Object.entries(scheduleItems)
+    .sort(([firstId, firstItem], [nextId, nextItem]) => {
+      // Turn your strings into dates, and then subtract them
+      // to get a value that is either negative, positive, or zero.
+      return compareAsc(
+        parseISO(firstItem.executeAt),
+        parseISO(nextItem.executeAt)
+      );
+    })
+    .reduce((prev: any, [id, item]) => {
+      const groupId = format(parseISO(item.executeAt), "MMM yyyy");
+      const group = [...(prev[groupId] ?? []), item];
+
+      return { ...prev, [groupId]: group };
+    }, {});
+
   return (
     <Card>
-        <CardHeader
-            title="History"
-        />
-        <CardContent style={{ padding: 0 }}>
-            <List
-                subheader={
-                    <ListSubheader component="div">
-                        May 2021
-                    </ListSubheader>
-                }
-                className={classes.root}
-                >
-                <Item />
-                <Item />
-                <Item color={yellow[400]} />
-                <Item color={teal[400]} />
-                <Item color={orange[400]} />
-            </List> 
-            <List
-                subheader={
-                    <ListSubheader component="div">
-                        Jun 2021
-                    </ListSubheader>
-                }
-                className={classes.root}
-                >
-                <Item />
-                <Item />
-                <Item color={yellow[400]} />
-                <Item color={teal[400]} />
-                <Item color={orange[400]} />
-            </List> 
-        </CardContent>
+      <CardHeader title="History" />
+      <CardContent style={{ padding: 0 }}>
+        {Object.entries(itemsGroupedByMonth).map(([group, items]) => (
+          <List
+            subheader={<ListSubheader component="div">{group}</ListSubheader>}
+            className={classes.root}
+          >
+            {items.map((item) => (
+              <Item
+                item={item}
+                contract={contracts[item.contractId]}
+                provider={providers[item.providerId]}
+              />
+            ))}
+          </List>
+        ))}
+      </CardContent>
     </Card>
-    
   );
-}
+};
 
-export default History
+export default History;
