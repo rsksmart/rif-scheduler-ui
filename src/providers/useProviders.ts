@@ -68,7 +68,7 @@ const useProviders = create<IUseProviders>(
         }, 1000);
       },
     }),
-    localbasePersist("providers")
+    localbasePersist("providers", ["isLoading"])
   )
 );
 

@@ -58,7 +58,7 @@ const OrangeRadio = withStyles({
   checked: {},
 })((props: RadioProps) => <Radio color="default" {...props} />);
 
-const ColorSelector = ({ value, onChange }: any) => {
+const ColorSelector = ({ value, onChange, disabled }: any) => {
   const [selectedValue, setSelectedValue] = useState<string | null>(value);
 
   useEffect(() => {
@@ -77,6 +77,7 @@ const ColorSelector = ({ value, onChange }: any) => {
   return (
     <div style={{ textAlign: "right", whiteSpace: "nowrap", marginTop: 15 }}>
       <RedRadio
+        disabled={disabled}
         checked={selectedValue === red[400]}
         onChange={handleChange}
         value={red[400]}
@@ -85,6 +86,7 @@ const ColorSelector = ({ value, onChange }: any) => {
         inputProps={{ "aria-label": "Red" }}
       />
       <OrangeRadio
+        disabled={disabled}
         checked={selectedValue === orange[400]}
         onChange={handleChange}
         value={orange[400]}
@@ -93,6 +95,7 @@ const ColorSelector = ({ value, onChange }: any) => {
         inputProps={{ "aria-label": "Orange" }}
       />
       <YellowRadio
+        disabled={disabled}
         checked={selectedValue === yellow[400]}
         onChange={handleChange}
         value={yellow[400]}
@@ -101,6 +104,7 @@ const ColorSelector = ({ value, onChange }: any) => {
         inputProps={{ "aria-label": "Yellow" }}
       />
       <TealRadio
+        disabled={disabled}
         checked={selectedValue === teal[400]}
         onChange={handleChange}
         value={teal[400]}
@@ -109,6 +113,7 @@ const ColorSelector = ({ value, onChange }: any) => {
         inputProps={{ "aria-label": "Teal" }}
       />
       <LightBlueRadio
+        disabled={disabled}
         checked={selectedValue === lightBlue[400]}
         onChange={handleChange}
         value={lightBlue[400]}

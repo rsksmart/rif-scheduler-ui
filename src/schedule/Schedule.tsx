@@ -10,7 +10,7 @@ import {
   KeyboardTimePicker,
   KeyboardDatePicker,
 } from "@material-ui/pickers";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 import FormControl from "@material-ui/core/FormControl";
@@ -28,6 +28,8 @@ import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
 import { parseISO } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
+import shallow from "zustand/shallow";
+import ButtonWithLoading from "../shared/ButtonWIthLoading";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -46,10 +48,19 @@ const Schedule = () => {
 
   const [fields, setFields] = useState<Partial<IScheduleItem> | null>(null);
 
-  const scheduleAndSave = useSchedule((state) => state.scheduleAndSave);
+  const [scheduleAndSave, isLoading] = useSchedule(
+    (state) => [state.scheduleAndSave, state.isLoading],
+    shallow
+  );
 
   const providers = useProviders((state) => state.providers);
   const contracts = useContracts((state) => state.contracts);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setFields(null);
+    }
+  }, [isLoading]);
 
   const handleExecuteAtChange = (date: Date | null) => {
     setFields((values) => ({
@@ -130,7 +141,7 @@ const Schedule = () => {
       fields.providerId;
 
     let isContractFieldsValid = true;
-    for (let i = 0; i < contractInputs.length; i++) {
+    for (let i = 0; contractInputs && i < contractInputs.length; i++) {
       isContractFieldsValid =
         fields?.contractFields && fields.contractFields[i] ? true : false;
 
@@ -142,8 +153,6 @@ const Schedule = () => {
         ...(fields as IScheduleItem),
         id: fields?.id ?? uuidv4(),
       });
-
-      setFields(null);
     }
   };
 
@@ -155,6 +164,7 @@ const Schedule = () => {
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
             <div style={{ display: "flex", flex: 1, gap: "4px" }}>
               <TextField
+                disabled={isLoading}
                 margin="dense"
                 label="Title"
                 variant="filled"
@@ -163,12 +173,14 @@ const Schedule = () => {
                 value={fields?.title ? fields.title : ""}
               />
               <ColorSelector
+                disabled={isLoading}
                 value={fields?.color ? fields.color : ""}
                 onChange={handleFieldChange("color")}
               />
             </div>
             <div style={{ display: "flex", flex: 1, gap: "4px" }}>
               <KeyboardDatePicker
+                disabled={isLoading}
                 margin="dense"
                 id="executeDate"
                 inputVariant="filled"
@@ -182,6 +194,7 @@ const Schedule = () => {
                 }}
               />
               <KeyboardTimePicker
+                disabled={isLoading}
                 margin="dense"
                 id="executeTime"
                 fullWidth={true}
@@ -195,7 +208,12 @@ const Schedule = () => {
               />
             </div>
             <div style={{ display: "flex", flex: 1, gap: "4px" }}>
-              <FormControl variant="filled" fullWidth margin="dense">
+              <FormControl
+                variant="filled"
+                fullWidth
+                margin="dense"
+                disabled={isLoading}
+              >
                 <InputLabel id="schedule-network">Network</InputLabel>
                 <Select
                   labelId="schedule-network"
@@ -207,7 +225,12 @@ const Schedule = () => {
                   <MenuItem value={ENetwork.Testnet}>Testnet</MenuItem>
                 </Select>
               </FormControl>
-              <FormControl variant="filled" fullWidth margin="dense">
+              <FormControl
+                variant="filled"
+                fullWidth
+                margin="dense"
+                disabled={isLoading}
+              >
                 <InputLabel id="schedule-provider">Provider</InputLabel>
                 <Select
                   labelId="schedule-provider"
@@ -228,7 +251,12 @@ const Schedule = () => {
               </FormControl>
             </div>
             <div style={{ display: "flex", flex: 1, gap: "4px" }}>
-              <FormControl variant="filled" fullWidth margin="dense">
+              <FormControl
+                variant="filled"
+                fullWidth
+                margin="dense"
+                disabled={isLoading}
+              >
                 <InputLabel id="schedule-contract">Contract</InputLabel>
                 <Select
                   labelId="schedule-contract"
@@ -247,7 +275,12 @@ const Schedule = () => {
                     ))}
                 </Select>
               </FormControl>
-              <FormControl variant="filled" fullWidth margin="dense">
+              <FormControl
+                variant="filled"
+                fullWidth
+                margin="dense"
+                disabled={isLoading}
+              >
                 <InputLabel id="schedule-contract-method">Method</InputLabel>
                 <Select
                   labelId="schedule-contract-method"
@@ -287,6 +320,7 @@ const Schedule = () => {
               {contractInputs &&
                 contractInputs.map(({ name, type }: any, index: number) => (
                   <TextField
+                    disabled={isLoading}
                     margin="dense"
                     label={`${hyphensAndCamelCaseToWords(name)} (${
                       type.includes("int") ? "number" : type
@@ -305,15 +339,23 @@ const Schedule = () => {
           </MuiPickersUtilsProvider>
         </CardContent>
         <CardActions style={{ justifyContent: "flex-end" }}>
-          <Button onClick={handleClear} color="inherit">
+          <Button onClick={handleClear} color="inherit" disabled={isLoading}>
             Clear
           </Button>
-          <Button onClick={handleSchedule} color="primary">
-            Schedule
-          </Button>
+          <ButtonWithLoading
+            onClick={handleSchedule}
+            label="Schedule"
+            isLoading={isLoading}
+          />
         </CardActions>
       </Card>
-      <div className={classes.root} style={{ marginTop: 15 }}>
+
+      <div
+        className={classes.root}
+        style={{
+          marginTop: 15,
+        }}
+      >
         <History />
       </div>
     </Layout>

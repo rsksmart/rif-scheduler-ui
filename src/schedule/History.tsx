@@ -45,8 +45,8 @@ const useRowStyles = makeStyles((theme: Theme) =>
 
 const Item: React.FC<{
   item: IScheduleItem;
-  contract: IContract;
-  provider: IProvider;
+  contract?: IContract;
+  provider?: IProvider;
 }> = ({ item, contract, provider }) => {
   const classes = useRowStyles({ color: item.color });
 
@@ -61,8 +61,8 @@ const Item: React.FC<{
       />
       <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
       <ListItemText
-        primary={contract.name}
-        secondary={`${item.network} | ${provider.name}`}
+        primary={contract?.name}
+        secondary={`${item.network} | ${provider?.name}`}
         className={classes.part}
       />
       <ListItemSecondaryAction>
@@ -101,26 +101,37 @@ const History = () => {
       return { ...prev, [groupId]: group };
     }, {});
 
+  const groupedEntries = Object.entries(itemsGroupedByMonth);
+
+  console.log("groupedEntries", groupedEntries);
+
   return (
-    <Card>
-      <CardHeader title="History" />
-      <CardContent style={{ padding: 0 }}>
-        {Object.entries(itemsGroupedByMonth).map(([group, items]) => (
-          <List
-            subheader={<ListSubheader component="div">{group}</ListSubheader>}
-            className={classes.root}
-          >
-            {items.map((item) => (
-              <Item
-                item={item}
-                contract={contracts[item.contractId]}
-                provider={providers[item.providerId]}
-              />
+    <>
+      {groupedEntries.length > 0 && (
+        <Card>
+          <CardHeader title="History" />
+          <CardContent style={{ padding: 0 }}>
+            {groupedEntries.map(([group, items]) => (
+              <List
+                subheader={
+                  <ListSubheader component="div">{group}</ListSubheader>
+                }
+                className={classes.root}
+              >
+                {items.map((item) => (
+                  <Item
+                    key={`history-item-${item.id}`}
+                    item={item}
+                    contract={contracts[item.contractId]}
+                    provider={providers[item.providerId]}
+                  />
+                ))}
+              </List>
             ))}
-          </List>
-        ))}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
 };
 

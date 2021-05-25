@@ -17,6 +17,7 @@ export interface IScheduleItem {
 }
 
 export interface IUseSchedule {
+  isLoading: boolean;
   scheduleItems: {
     [id: string]: IScheduleItem;
   };
@@ -26,21 +27,25 @@ export interface IUseSchedule {
 const useSchedule = create<IUseSchedule>(
   persist(
     (set, get) => ({
+      isLoading: false,
       scheduleItems: {},
       scheduleAndSave: async (scheduleItem: IScheduleItem) => {
-        setTimeout(
-          () =>
-            set((state) => ({
-              scheduleItems: {
-                ...state.scheduleItems,
-                [scheduleItem.id]: scheduleItem,
-              },
-            })),
-          1000
-        );
+        set(() => ({
+          isLoading: true,
+        }));
+
+        setTimeout(() => {
+          set((state) => ({
+            scheduleItems: {
+              ...state.scheduleItems,
+              [scheduleItem.id]: scheduleItem,
+            },
+            isLoading: false,
+          }));
+        }, 1000);
       },
     }),
-    localbasePersist("schedule")
+    localbasePersist("schedule", ["isLoading"])
   )
 );
 

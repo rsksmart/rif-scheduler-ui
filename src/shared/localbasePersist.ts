@@ -23,9 +23,10 @@ const localbaseStorage: StateStorage = {
   },
 };
 
-const localbasePersist = (storeName: string) => {
+const localbasePersist = (storeName: string, blacklist?: any[]) => {
   return {
     name: storeName, // unique name
+    blacklist: blacklist,
     getStorage: () => localbaseStorage,
   };
 };
