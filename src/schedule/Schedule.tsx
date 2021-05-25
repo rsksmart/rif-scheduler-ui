@@ -7,8 +7,7 @@ import CardContent from "@material-ui/core/CardContent";
 import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
-  KeyboardTimePicker,
-  KeyboardDatePicker,
+  KeyboardDateTimePicker,
 } from "@material-ui/pickers";
 import { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
@@ -30,6 +29,7 @@ import { parseISO } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
+import ButtonGroup from "@material-ui/core/ButtonGroup";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -46,7 +46,9 @@ const useStyles = makeStyles((theme: Theme) =>
 const Schedule = () => {
   const classes = useStyles();
 
-  const [fields, setFields] = useState<Partial<IScheduleItem> | null>(null);
+  const [fields, setFields] = useState<Partial<IScheduleItem> | null>({
+    network: ENetwork.Mainnet,
+  });
 
   const [scheduleAndSave, isLoading] = useSchedule(
     (state) => [state.scheduleAndSave, state.isLoading],
@@ -58,7 +60,7 @@ const Schedule = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      setFields(null);
+      handleClear();
     }
   }, [isLoading]);
 
@@ -111,7 +113,9 @@ const Schedule = () => {
   };
 
   const handleClear = () => {
-    setFields(null);
+    setFields((prev) => ({
+      network: prev?.network,
+    }));
   };
 
   const abi = fields?.contractId
@@ -159,8 +163,36 @@ const Schedule = () => {
   return (
     <Layout>
       <Card className={classes.root} variant="outlined">
-        <CardHeader title="Schedule" />
-        <CardContent>
+        <CardHeader
+          title="Schedule"
+          action={
+            <ButtonGroup color="secondary" disabled={isLoading}>
+              <Button
+                style={{ textTransform: "none" }}
+                variant={
+                  fields?.network === ENetwork.Mainnet ? "contained" : undefined
+                }
+                onClick={() =>
+                  handleNetworkChange({ target: { value: ENetwork.Mainnet } })
+                }
+              >
+                Mainnet
+              </Button>
+              <Button
+                style={{ textTransform: "none" }}
+                variant={
+                  fields?.network === ENetwork.Testnet ? "contained" : undefined
+                }
+                onClick={() =>
+                  handleNetworkChange({ target: { value: ENetwork.Testnet } })
+                }
+              >
+                Testnet
+              </Button>
+            </ButtonGroup>
+          }
+        />
+        <CardContent style={{ paddingTop: 0, paddingBottom: 0 }}>
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
             <div style={{ display: "flex", flex: 1, gap: "4px" }}>
               <TextField
@@ -172,59 +204,20 @@ const Schedule = () => {
                 onChange={handleFieldChange("title")}
                 value={fields?.title ? fields.title : ""}
               />
-              <ColorSelector
-                disabled={isLoading}
-                value={fields?.color ? fields.color : ""}
-                onChange={handleFieldChange("color")}
-              />
-            </div>
-            <div style={{ display: "flex", flex: 1, gap: "4px" }}>
-              <KeyboardDatePicker
+              <KeyboardDateTimePicker
                 disabled={isLoading}
                 margin="dense"
-                id="executeDate"
+                id="executeAt"
                 inputVariant="filled"
-                label="Date"
-                format="MM/dd/yyyy"
+                label="Execute At"
+                format="MM/dd/yyyy HH:mm"
                 fullWidth={true}
                 value={fields?.executeAt ? parseISO(fields.executeAt) : null}
                 onChange={handleExecuteAtChange}
                 KeyboardButtonProps={{
-                  "aria-label": "change date",
+                  "aria-label": "change execute at",
                 }}
               />
-              <KeyboardTimePicker
-                disabled={isLoading}
-                margin="dense"
-                id="executeTime"
-                fullWidth={true}
-                label="Time"
-                inputVariant="filled"
-                value={fields?.executeAt ? parseISO(fields.executeAt) : null}
-                onChange={handleExecuteAtChange}
-                KeyboardButtonProps={{
-                  "aria-label": "change time",
-                }}
-              />
-            </div>
-            <div style={{ display: "flex", flex: 1, gap: "4px" }}>
-              <FormControl
-                variant="filled"
-                fullWidth
-                margin="dense"
-                disabled={isLoading}
-              >
-                <InputLabel id="schedule-network">Network</InputLabel>
-                <Select
-                  labelId="schedule-network"
-                  onChange={handleNetworkChange}
-                  value={fields?.network ? fields.network : ""}
-                >
-                  <MenuItem disabled>None</MenuItem>
-                  <MenuItem value={ENetwork.Mainnet}>Mainnet</MenuItem>
-                  <MenuItem value={ENetwork.Testnet}>Testnet</MenuItem>
-                </Select>
-              </FormControl>
               <FormControl
                 variant="filled"
                 fullWidth
@@ -314,7 +307,7 @@ const Schedule = () => {
                   color="textSecondary"
                   style={{ marginTop: 12 }}
                 >
-                  Method parameters
+                  Method Parameters
                 </Typography>
               )}
               {contractInputs &&
@@ -322,9 +315,12 @@ const Schedule = () => {
                   <TextField
                     disabled={isLoading}
                     margin="dense"
-                    label={`${hyphensAndCamelCaseToWords(name)} (${
-                      type.includes("int") ? "number" : type
-                    })`}
+                    label={hyphensAndCamelCaseToWords(name)}
+                    helperText={
+                      type.includes("int")
+                        ? "Number"
+                        : hyphensAndCamelCaseToWords(type)
+                    }
                     variant="filled"
                     fullWidth
                     onChange={handleContractFieldsChange(index)}
@@ -338,15 +334,22 @@ const Schedule = () => {
             </div>
           </MuiPickersUtilsProvider>
         </CardContent>
-        <CardActions style={{ justifyContent: "flex-end" }}>
-          <Button onClick={handleClear} color="inherit" disabled={isLoading}>
-            Clear
-          </Button>
-          <ButtonWithLoading
-            onClick={handleSchedule}
-            label="Schedule"
-            isLoading={isLoading}
+        <CardActions style={{ justifyContent: "space-between" }}>
+          <ColorSelector
+            disabled={isLoading}
+            value={fields?.color ? fields.color : ""}
+            onChange={handleFieldChange("color")}
           />
+          <div style={{ display: "flex" }}>
+            <Button onClick={handleClear} color="inherit" disabled={isLoading}>
+              Clear
+            </Button>
+            <ButtonWithLoading
+              onClick={handleSchedule}
+              label="Schedule"
+              isLoading={isLoading}
+            />
+          </div>
         </CardActions>
       </Card>
 

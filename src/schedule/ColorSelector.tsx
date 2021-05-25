@@ -75,7 +75,7 @@ const ColorSelector = ({ value, onChange, disabled }: any) => {
   };
 
   return (
-    <div style={{ textAlign: "right", whiteSpace: "nowrap", marginTop: 15 }}>
+    <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
       <RedRadio
         disabled={disabled}
         checked={selectedValue === red[400]}
