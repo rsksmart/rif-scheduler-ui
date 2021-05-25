@@ -133,11 +133,13 @@ const AddEditContract = ({
             value={fields?.ABI}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
+        >
           <Button onClick={handleClose} color="inherit">
             Cancel
           </Button>
-          <Button onClick={handleSave} color="primary">
+          <Button onClick={handleSave} color="primary" variant="outlined">
             Save
           </Button>
         </DialogActions>

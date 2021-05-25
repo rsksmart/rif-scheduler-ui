@@ -30,7 +30,12 @@ const ButtonWithLoading = ({ isLoading, onClick, label }: any) => {
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>
-        <Button color="primary" disabled={isLoading} onClick={onClick}>
+        <Button
+          color="primary"
+          variant="outlined"
+          disabled={isLoading}
+          onClick={onClick}
+        >
           {label}
         </Button>
         {isLoading && (
