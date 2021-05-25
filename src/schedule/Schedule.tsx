@@ -5,6 +5,7 @@ import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import DateFnsUtils from "@date-io/date-fns";
+import Hidden from "@material-ui/core/Hidden";
 import {
   MuiPickersUtilsProvider,
   KeyboardDateTimePicker,
@@ -164,7 +165,7 @@ const Schedule = () => {
     <Layout>
       <Card className={classes.root} variant="outlined">
         <CardHeader
-          title="Schedule"
+          title={<Hidden xsDown>Schedule</Hidden>}
           action={
             <ButtonGroup color="secondary" disabled={isLoading}>
               <Button
@@ -194,13 +195,22 @@ const Schedule = () => {
         />
         <CardContent style={{ paddingTop: 0, paddingBottom: 0 }}>
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <div style={{ display: "flex", flex: 1, gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                gap: "4px",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+              }}
+            >
               <TextField
                 disabled={isLoading}
                 margin="dense"
                 label="Title"
                 variant="filled"
                 fullWidth
+                style={{ flex: 1, minWidth: 200 }}
                 onChange={handleFieldChange("title")}
                 value={fields?.title ? fields.title : ""}
               />
@@ -212,6 +222,7 @@ const Schedule = () => {
                 label="Execute At"
                 format="MM/dd/yyyy HH:mm"
                 fullWidth={true}
+                style={{ flex: 1, minWidth: 200 }}
                 value={fields?.executeAt ? parseISO(fields.executeAt) : null}
                 onChange={handleExecuteAtChange}
                 KeyboardButtonProps={{
@@ -221,6 +232,7 @@ const Schedule = () => {
               <FormControl
                 variant="filled"
                 fullWidth
+                style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
               >
@@ -243,10 +255,19 @@ const Schedule = () => {
                 </Select>
               </FormControl>
             </div>
-            <div style={{ display: "flex", flex: 1, gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                gap: "4px",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+              }}
+            >
               <FormControl
                 variant="filled"
                 fullWidth
+                style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
               >
@@ -271,6 +292,7 @@ const Schedule = () => {
               <FormControl
                 variant="filled"
                 fullWidth
+                style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
               >
@@ -334,13 +356,15 @@ const Schedule = () => {
             </div>
           </MuiPickersUtilsProvider>
         </CardContent>
-        <CardActions style={{ justifyContent: "space-between" }}>
+        <CardActions
+          style={{ justifyContent: "space-between", flexWrap: "wrap" }}
+        >
           <ColorSelector
             disabled={isLoading}
             value={fields?.color ? fields.color : ""}
             onChange={handleFieldChange("color")}
           />
-          <div style={{ display: "flex" }}>
+          <div style={{ display: "flex", flex: 1, justifyContent: "flex-end" }}>
             <Button onClick={handleClear} color="inherit" disabled={isLoading}>
               Clear
             </Button>
