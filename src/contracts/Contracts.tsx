@@ -8,6 +8,7 @@ import AddEditContract from "./AddEditContract";
 import useContracts, { IContract } from "./useContracts";
 import { useState } from "react";
 import { CardActionArea } from "@material-ui/core";
+import StoragePersistAlert from "./StoragePersistAlert";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -39,6 +40,9 @@ const Contracts = () => {
           </Typography>
         </CardContent>
       </Card>
+
+      <StoragePersistAlert />
+
       <AddEditContract
         key={`edit-contract-${editing?.id}`}
         hideButton={true}

@@ -109,8 +109,9 @@ const History = () => {
         <Card>
           <CardHeader title="History" />
           <CardContent style={{ padding: 0 }}>
-            {groupedEntries.map(([group, items]) => (
+            {groupedEntries.map(([group, items], index) => (
               <List
+                key={`history-group-${index}`}
                 subheader={
                   <ListSubheader component="div">{group}</ListSubheader>
                 }
