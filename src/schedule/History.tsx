@@ -103,8 +103,6 @@ const History = () => {
 
   const groupedEntries = Object.entries(itemsGroupedByMonth);
 
-  console.log("groupedEntries", groupedEntries);
-
   return (
     <>
       {groupedEntries.length > 0 && (

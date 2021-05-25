@@ -26,7 +26,7 @@ import { ENetwork } from "../shared/types";
 import useProviders from "../providers/useProviders";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
-import { parseISO } from "date-fns";
+import { parseISO, isValid } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
@@ -68,7 +68,7 @@ const Schedule = () => {
   const handleExecuteAtChange = (date: Date | null) => {
     setFields((values) => ({
       ...values,
-      executeAt: date ? date.toISOString() : undefined,
+      executeAt: date && isValid(date) ? date.toISOString() : undefined,
     }));
   };
 
