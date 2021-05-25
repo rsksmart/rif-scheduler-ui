@@ -16,7 +16,6 @@ import MenuItem from "@material-ui/core/MenuItem";
 import FormHelperText from "@material-ui/core/FormHelperText";
 import useContracts, { IContract } from "./useContracts";
 import { ENetwork } from "../shared/types";
-import { v4 as uuidv4 } from "uuid";
 
 const AddEditContract = ({
   hideButton = false,
@@ -54,7 +53,7 @@ const AddEditContract = ({
     if (isValid) {
       save({
         ...(fields as IContract),
-        id: fields?.id ?? uuidv4(),
+        id: fields?.id ?? `${fields?.network}-${fields?.address}`,
       });
 
       setFields(null);
