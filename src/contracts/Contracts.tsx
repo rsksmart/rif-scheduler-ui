@@ -9,6 +9,7 @@ import useContracts, { IContract } from "./useContracts";
 import { useState } from "react";
 import { CardActionArea } from "@material-ui/core";
 import StoragePersistAlert from "./StoragePersistAlert";
+import contractSvg from "../assets/illustrations/contractBolt.svg";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -80,7 +81,7 @@ const ContractButton = ({ name, network, onClick }: any) => {
       <CardActionArea
         style={{
           height: "100%",
-          background: "url(/contract-bolt.svg) no-repeat",
+          background: `url(${contractSvg}) no-repeat`,
           backgroundPosition: "right -60px top -20px",
           backgroundSize: "160px 160px",
         }}

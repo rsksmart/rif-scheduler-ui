@@ -8,6 +8,7 @@ import { CardActionArea } from "@material-ui/core";
 import useProviders from "./useProviders";
 import shallow from "zustand/shallow";
 import Loading from "../shared/Loading";
+import providerSvg from "../assets/illustrations/providerSchedule.svg";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -73,7 +74,7 @@ const ProviderButton = ({ name, network, onClick }: any) => {
       <CardActionArea
         style={{
           height: "100%",
-          background: "url(/provider-schedule.svg) no-repeat",
+          background: `url(${providerSvg}) no-repeat`,
           backgroundPosition: "right -60px top -20px",
           backgroundSize: "160px 160px",
         }}

@@ -52,7 +52,7 @@ const StoragePersistAlert = () => {
   return (
     <>
       {showAlert && (
-        <Card className={classes.root} variant="outlined">
+        <Card className={classes.root}>
           <CardHeader title={"Persist Storage"} />
           <CardContent>
             <Typography variant="body2" color="textSecondary" component="p">
