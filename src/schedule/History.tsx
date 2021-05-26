@@ -15,6 +15,9 @@ import { format, parseISO, compareAsc } from "date-fns";
 import { ExecutionState, ExecutionStateDescriptions } from "../shared/types";
 import useProviders, { IProvider } from "../providers/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
+import HistoryIcon from "@material-ui/icons/History";
+import UpcomingIcon from "@material-ui/icons/AlarmOn";
+import { useState } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -81,9 +84,17 @@ interface IGroupBy {
 const History = () => {
   const classes = useStyles();
 
+  const [isFromThisMonth, setIsFromThisMonth] = useState(true);
+
   const scheduleItems = useSchedule((state) => state.scheduleItems);
   const contracts = useContracts((state) => state.contracts);
   const providers = useProviders((state) => state.providers);
+
+  const firstDayCurrentMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  );
 
   const itemsGroupedByMonth: IGroupBy = Object.entries(scheduleItems)
     .sort(([firstId, firstItem], [nextId, nextItem]) => {
@@ -94,6 +105,9 @@ const History = () => {
         parseISO(nextItem.executeAt)
       );
     })
+    .filter(([id, item]) =>
+      isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true
+    )
     .reduce((prev: any, [id, item]) => {
       const groupId = format(parseISO(item.executeAt), "MMM yyyy");
       const group = [...(prev[groupId] ?? []), item];
@@ -107,7 +121,19 @@ const History = () => {
     <>
       {groupedEntries.length > 0 && (
         <Card>
-          <CardHeader title="History" />
+          <CardHeader
+            title={isFromThisMonth ? "From this month onwards" : "History"}
+            action={
+              <IconButton
+                aria-label="filter"
+                size="small"
+                onClick={() => setIsFromThisMonth((prev) => !prev)}
+              >
+                {isFromThisMonth && <HistoryIcon />}
+                {!isFromThisMonth && <UpcomingIcon />}
+              </IconButton>
+            }
+          />
           <CardContent style={{ padding: 0 }}>
             {groupedEntries.map(([group, items], index) => (
               <List
