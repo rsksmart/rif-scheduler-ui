@@ -8,6 +8,7 @@ export interface IPlan {
   window: number;
   token: string;
   active: boolean;
+  remainingExecutions: number;
 }
 
 export interface IProvider {
@@ -24,6 +25,11 @@ export interface IUseProviders {
   };
   isLoading: boolean;
   load: () => Promise<void>;
+  purchaseExecutions: (
+    provider: IProvider,
+    plan: number,
+    executionsAmount: number
+  ) => Promise<void>;
 }
 
 const useProviders = create<IUseProviders>(
@@ -31,6 +37,28 @@ const useProviders = create<IUseProviders>(
     (set, get) => ({
       providers: {},
       isLoading: false,
+      purchaseExecutions: async (
+        provider: IProvider,
+        plan: number,
+        executionsAmount: number
+      ) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        setTimeout(() => {
+          // TODO: use the sdk to purchase more executions
+
+          const result = { ...provider, plans: [...provider.plans] };
+
+          result.plans[plan].remainingExecutions += executionsAmount;
+
+          set((state) => ({
+            providers: { ...state.providers, [result.id]: result },
+            isLoading: false,
+          }));
+        }, 1000);
+      },
       load: async () => {
         set(() => ({
           isLoading: true,
@@ -51,12 +79,14 @@ const useProviders = create<IUseProviders>(
                 window: 10000,
                 token: "valid-token-address",
                 active: true,
+                remainingExecutions: 0,
               },
               {
                 pricePerExecution: 4,
                 window: 300,
                 token: "valid-token-address",
                 active: true,
+                remainingExecutions: 0,
               },
             ],
           };

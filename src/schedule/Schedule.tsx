@@ -364,7 +364,13 @@ const Schedule = () => {
             value={fields?.color ? fields.color : ""}
             onChange={handleFieldChange("color")}
           />
-          <div style={{ display: "flex", flex: 1, justifyContent: "flex-end" }}>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button onClick={handleClear} color="inherit" disabled={isLoading}>
               Clear
             </Button>

@@ -9,6 +9,7 @@ import useProviders from "./useProviders";
 import shallow from "zustand/shallow";
 import Loading from "../shared/Loading";
 import providerSvg from "../assets/illustrations/providerSchedule.svg";
+import PurchaseExecutions from "./PurchaseExecutions";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -56,40 +57,10 @@ const Providers = () => {
         }}
       >
         {Object.entries(providers).map(([id, provider]) => (
-          <ProviderButton
-            key={`provider-list-${id}`}
-            name={provider.name}
-            network={provider.network}
-            // onClick={() => setEditing(contract)}
-          />
+          <PurchaseExecutions key={`provider-list-${id}`} provider={provider} />
         ))}
       </div>
     </Layout>
-  );
-};
-
-const ProviderButton = ({ name, network, onClick }: any) => {
-  return (
-    <Card>
-      <CardActionArea
-        style={{
-          height: "100%",
-          background: `url(${providerSvg}) no-repeat`,
-          backgroundPosition: "right -60px top -20px",
-          backgroundSize: "160px 160px",
-        }}
-        onClick={onClick}
-      >
-        <CardContent>
-          <Typography gutterBottom variant="h5" component="h2">
-            {name}
-          </Typography>
-          <Typography variant="body2" color="textSecondary" component="span">
-            {network}
-          </Typography>
-        </CardContent>
-      </CardActionArea>
-    </Card>
   );
 };
 
