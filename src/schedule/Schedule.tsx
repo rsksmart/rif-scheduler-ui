@@ -31,6 +31,7 @@ import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
+import secondsToHms from "../shared/secondsToHms";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -134,6 +135,11 @@ const Schedule = () => {
         )?.inputs
       : undefined;
 
+  const providerPlans =
+    Object.values(providers).find(
+      (provider) => provider.id === fields?.providerId
+    )?.plans ?? [];
+
   const handleSchedule = () => {
     // TODO: validate schedule fields
     const isValid =
@@ -143,7 +149,8 @@ const Schedule = () => {
       fields.contractMethod &&
       fields.network &&
       fields.executeAt &&
-      fields.providerId;
+      fields.providerId &&
+      fields.providerPlanIndex;
 
     let isContractFieldsValid = true;
     for (let i = 0; contractInputs && i < contractInputs.length; i++) {
@@ -229,6 +236,16 @@ const Schedule = () => {
                   "aria-label": "change execute at",
                 }}
               />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                gap: "4px",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+              }}
+            >
               <FormControl
                 variant="filled"
                 fullWidth
@@ -252,6 +269,35 @@ const Schedule = () => {
                         {provider.name}
                       </MenuItem>
                     ))}
+                </Select>
+              </FormControl>
+              <FormControl
+                variant="filled"
+                fullWidth
+                style={{ flex: 1, minWidth: 200 }}
+                margin="dense"
+                disabled={isLoading}
+              >
+                <InputLabel id="schedule-provider-plan">Plan</InputLabel>
+                <Select
+                  labelId="schedule-provider-plan"
+                  value={`${
+                    fields?.providerPlanIndex ? fields.providerPlanIndex : ""
+                  }`}
+                  onChange={handleFieldChange("providerPlanIndex")}
+                >
+                  <MenuItem disabled>None</MenuItem>
+                  {providerPlans.map((plan, index) => (
+                    <MenuItem
+                      key={`schedule-provider-plan-${fields?.providerId}-${index}`}
+                      value={`${index}`}
+                    >
+                      {`#${index + 1}`}
+                      <span style={{ marginLeft: 8 }}>{`Window: ${secondsToHms(
+                        plan.window
+                      )}`}</span>
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </div>
@@ -296,7 +342,7 @@ const Schedule = () => {
                 margin="dense"
                 disabled={isLoading}
               >
-                <InputLabel id="schedule-contract-method">Method</InputLabel>
+                <InputLabel id="schedule-contract-method">Action</InputLabel>
                 <Select
                   labelId="schedule-contract-method"
                   value={fields?.contractMethod ? fields.contractMethod : ""}
@@ -329,7 +375,7 @@ const Schedule = () => {
                   color="textSecondary"
                   style={{ marginTop: 12 }}
                 >
-                  Method Parameters
+                  Action Parameters
                 </Typography>
               )}
               {contractInputs &&
@@ -371,9 +417,15 @@ const Schedule = () => {
               justifyContent: "flex-end",
             }}
           >
-            <Button onClick={handleClear} color="inherit" disabled={isLoading}>
-              Clear
-            </Button>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Button
+                onClick={handleClear}
+                color="inherit"
+                disabled={isLoading}
+              >
+                Clear
+              </Button>
+            </div>
             <ButtonWithLoading
               onClick={handleSchedule}
               label="Schedule"

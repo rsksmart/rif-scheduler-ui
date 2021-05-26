@@ -4,11 +4,9 @@ import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
-import { CardActionArea } from "@material-ui/core";
 import useProviders from "./useProviders";
 import shallow from "zustand/shallow";
 import Loading from "../shared/Loading";
-import providerSvg from "../assets/illustrations/providerSchedule.svg";
 import PurchaseExecutions from "./PurchaseExecutions";
 
 const useStyles = makeStyles((theme: Theme) =>

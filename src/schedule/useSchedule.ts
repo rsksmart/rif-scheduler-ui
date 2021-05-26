@@ -9,6 +9,7 @@ export interface IScheduleItem {
   network: ENetwork;
   executeAt: string;
   providerId: string;
+  providerPlanIndex: number;
   contractId: string;
   contractMethod: string;
   contractFields: string[];

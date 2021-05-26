@@ -76,7 +76,7 @@ const useProviders = create<IUseProviders>(
             plans: [
               {
                 pricePerExecution: 3,
-                window: 10000,
+                window: 9000,
                 token: "valid-token-address",
                 active: true,
                 remainingExecutions: 0,
