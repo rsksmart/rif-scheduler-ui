@@ -15,4 +15,4 @@ npm run build
 
 ## Demo
 
-[Open](https://rif-scheduler-poc.web.app/)
+[https://rif-scheduler-poc.web.app/](https://rif-scheduler-poc.web.app/)
