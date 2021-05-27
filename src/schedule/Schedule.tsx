@@ -49,7 +49,7 @@ const Schedule = () => {
   const classes = useStyles();
 
   const [fields, setFields] = useState<Partial<IScheduleItem> | null>({
-    network: ENetwork.Mainnet,
+    network: ENetwork.Testnet,
   });
 
   const [scheduleAndSave, isLoading] = useSchedule(
