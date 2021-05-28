@@ -36,7 +36,7 @@ const Contracts = () => {
         <CardHeader action={<AddEditContract />} title="Contracts" />
         <CardContent>
           <Typography variant="body2" color="textSecondary" component="p">
-            Register your contract's here to be able to schedule its execution
+            Register your contracts here to be able to schedule their execution
             later.
           </Typography>
         </CardContent>

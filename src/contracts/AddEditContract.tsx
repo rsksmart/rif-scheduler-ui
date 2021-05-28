@@ -92,7 +92,7 @@ const AddEditContract = ({
             autoFocus
             margin="dense"
             label="Name"
-            helperText="Give your contract a name to make it easier to identify it. Only for display purposes."
+            helperText="Give your contract a name to make it easier to identify. Only for display purposes."
             variant="filled"
             fullWidth
             onChange={handleFieldChange("name")}
@@ -115,7 +115,7 @@ const AddEditContract = ({
           <TextField
             margin="dense"
             label="Address"
-            helperText="Your contract address"
+            helperText="Add your contract address"
             variant="filled"
             fullWidth
             onChange={handleFieldChange("address")}

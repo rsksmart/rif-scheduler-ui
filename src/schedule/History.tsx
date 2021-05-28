@@ -122,7 +122,7 @@ const History = () => {
       {groupedEntries.length > 0 && (
         <Card>
           <CardHeader
-            title={isFromThisMonth ? "From this month onwards" : "History"}
+            title={isFromThisMonth ? "Current and pending" : "History"}
             action={
               <IconButton
                 aria-label="filter"

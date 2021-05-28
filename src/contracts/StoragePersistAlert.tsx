@@ -56,10 +56,10 @@ const StoragePersistAlert = () => {
           <CardHeader title={"Persist Storage"} />
           <CardContent>
             <Typography variant="body2" color="textSecondary" component="p">
-              This is a decentralized web application and your data is only
-              saved in this browser so we recommend enabling persistent storage
-              so that your browser will NOT be able to delete your data
-              automatically.
+              This is a decentralized web application which means your data is
+              only saved in this browser, so we recommend enabling persistent
+              storage to prevent your data from being deleted automatically by
+              your browser.
             </Typography>
           </CardContent>
           <CardActions style={{ justifyContent: "flex-end" }}>

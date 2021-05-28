@@ -204,7 +204,7 @@ const PlanRow: React.FC<{
         </div>
         <div className={classes.columnPurchase}>
           <Typography variant="caption" color="textSecondary">
-            {`You has ${plan.remainingExecutions ?? 0} executions left`}
+            {`You have ${plan.remainingExecutions ?? 0} executions left`}
           </Typography>
           <br />
           <Typography
@@ -212,7 +212,7 @@ const PlanRow: React.FC<{
             variant="subtitle2"
             gutterBottom
           >
-            Select the amount of executions to buy
+            Select the quantity of executions to purchase
           </Typography>
           <Slider
             disabled={isLoading}

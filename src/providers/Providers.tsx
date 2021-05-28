@@ -35,8 +35,8 @@ const Providers = () => {
         <CardHeader title="Providers" />
         <CardContent>
           <Typography variant="body2" color="textSecondary" component="p">
-            Here you can see the service providers currently available and
-            purchase its execution plans.
+            Here you can see the currently available service providers and
+            purchase their execution plans.
           </Typography>
         </CardContent>
       </Card>
