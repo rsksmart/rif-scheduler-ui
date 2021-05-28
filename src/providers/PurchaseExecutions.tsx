@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -12,13 +12,12 @@ import {
   makeStyles,
 } from "@material-ui/core/styles";
 import PriceIcon from "@material-ui/icons/AccountBalanceWallet";
-import useProviders, { IPlan, IProvider } from "./useProviders";
+import useProviders, { IPlanWithExecutions, IProvider } from "./useProviders";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import { CardActionArea } from "@material-ui/core";
 import providerSvg from "../assets/illustrations/providerSchedule.svg";
-
 import Accordion from "@material-ui/core/Accordion";
 import AccordionDetails from "@material-ui/core/AccordionDetails";
 import AccordionSummary from "@material-ui/core/AccordionSummary";
@@ -26,9 +25,10 @@ import AccordionActions from "@material-ui/core/AccordionActions";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import Divider from "@material-ui/core/Divider";
 import Slider from "@material-ui/core/Slider";
-import secondsToHms from "../shared/secondsToHms";
+import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
+import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -89,7 +89,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
 
   const handleBuyClick = (
     index: number,
-    plan: IPlan,
+    plan: IPlanWithExecutions,
     executionsAmount: number
   ) => {
     // TODO: validate purchase fields
@@ -159,8 +159,12 @@ export default PurchaseExecutions;
 
 const PlanRow: React.FC<{
   index: number;
-  plan: IPlan;
-  onBuyClick?: (index: number, plan: IPlan, executionsAmount: number) => void;
+  plan: IPlanWithExecutions;
+  onBuyClick?: (
+    index: number,
+    plan: IPlanWithExecutions,
+    executionsAmount: number
+  ) => void;
   isLoading: boolean;
 }> = ({ index, plan, onBuyClick, isLoading }) => {
   const classes = useStyles();
@@ -181,7 +185,7 @@ const PlanRow: React.FC<{
         </div>
         <div className={classes.columnWindow}>
           <Typography className={classes.secondaryHeading}>
-            {`Window: ${secondsToHms(plan.window)}`}
+            {`Window: ${fromBigNumberToHms(plan.window)}`}
           </Typography>
         </div>
       </AccordionSummary>
@@ -193,12 +197,14 @@ const PlanRow: React.FC<{
           <br />
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <PriceIcon />
-            <Typography variant="h5">{plan.pricePerExecution}</Typography>
+            <Typography variant="h5">
+              {formatPrice(plan.pricePerExecution)}
+            </Typography>
           </div>
         </div>
         <div className={classes.columnPurchase}>
           <Typography variant="caption" color="textSecondary">
-            {`You has ${plan.remainingExecutions} executions left`}
+            {`You has ${plan.remainingExecutions ?? 0} executions left`}
           </Typography>
           <br />
           <Typography
@@ -243,9 +249,9 @@ const PlanRow: React.FC<{
         style={{ justifyContent: "space-between", flexWrap: "wrap" }}
       >
         <Typography variant="caption">
-          {`Total: ${buyingExecutions} x ${plan.pricePerExecution} (token) = ${
-            buyingExecutions * plan.pricePerExecution
-          } (token)`}
+          {`Total: ${buyingExecutions} x ${plan.pricePerExecution.toHexString()} (token) = ${plan.pricePerExecution
+            .mul(buyingExecutions)
+            .toHexString()} (token)`}
         </Typography>
         <div
           style={{

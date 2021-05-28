@@ -31,7 +31,7 @@ import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
-import secondsToHms from "../shared/secondsToHms";
+import { fromBigNumberToHms } from "../shared/formatters";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -293,9 +293,9 @@ const Schedule = () => {
                       value={`${index}`}
                     >
                       {`#${index + 1}`}
-                      <span style={{ marginLeft: 8 }}>{`Window: ${secondsToHms(
-                        plan.window
-                      )}`}</span>
+                      <span
+                        style={{ marginLeft: 8 }}
+                      >{`Window: ${fromBigNumberToHms(plan.window)}`}</span>
                     </MenuItem>
                   ))}
                 </Select>
