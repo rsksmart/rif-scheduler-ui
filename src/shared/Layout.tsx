@@ -20,19 +20,19 @@ const useStyles = makeStyles((theme: Theme) =>
     menuButton: {
       marginRight: theme.spacing(2),
     },
-    logo: {
+    logo: ({ hideMenu }: any) => ({
       height: 32,
       "@media (max-width: 380px)": {
-        display: "none",
+        display: hideMenu ? "initial" : "none",
       },
-    },
-    title: {
+    }),
+    title: ({ hideMenu }: any) => ({
       marginLeft: -15,
       flexGrow: 1,
       "@media (max-width: 500px)": {
-        display: "none",
+        display: hideMenu ? "initial" : "none",
       },
-    },
+    }),
     navButtons: {
       display: "flex",
       flex: 1,
@@ -65,10 +65,8 @@ const menuIndexes: { [key: string]: number } = {
 };
 
 const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
-  const classes = useStyles();
+  const classes = useStyles({ hideMenu });
   const location = useLocation();
-
-  console.log("location.pathname", location.pathname);
 
   return (
     <>
@@ -89,24 +87,28 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
                   label="Schedule"
                   icon={<ScheduleIcon />}
                   component={Link}
+                  style={{ padding: "8px 12px 6px" }}
                   to="/"
                 />
                 <BottomNavigationAction
                   label="Providers"
                   icon={<ProvidersIcon />}
                   component={Link}
+                  style={{ padding: "8px 12px 6px" }}
                   to="/providers"
                 />
                 <BottomNavigationAction
                   label="Contracts"
                   icon={<ContractsIcon />}
                   component={Link}
+                  style={{ padding: "8px 12px 6px" }}
                   to="/contracts"
                 />
                 <BottomNavigationAction
                   label="Account"
                   icon={<AccountIcon />}
                   component={Link}
+                  style={{ padding: "8px 12px 6px" }}
                   to="/account"
                 />
               </BottomNavigation>

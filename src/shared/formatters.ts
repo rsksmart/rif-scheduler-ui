@@ -46,5 +46,11 @@ export const fromBigNumberToHms = (secondsInput: EthBigNumber) => {
 };
 
 export const formatPrice = (price: EthBigNumber) => {
-  return new BigNumber(price.toString()).div(10 ** 16).toFormat(3);
+  const bigNumber = new BigNumber(price.toString()).div(10 ** 16);
+
+  if (bigNumber.decimalPlaces() > 0) {
+    return bigNumber.toFormat(3);
+  }
+
+  return bigNumber.toFormat();
 };

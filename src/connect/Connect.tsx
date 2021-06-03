@@ -1,7 +1,7 @@
 import RLogin, { RLoginButton } from "@rsksmart/rlogin";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { providers } from "ethers";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import useConnector from "./useConnector";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import Layout from "../shared/Layout";
@@ -13,7 +13,7 @@ import Loading from "../shared/Loading";
 import shallow from "zustand/shallow";
 
 const rLogin = new RLogin({
-  cachedProvider: true, // change to true to cache user's wallet choice
+  cachedProvider: false, // change to true to cache user's wallet choice
   providerOptions: {
     // read more about providers setup in https://github.com/web3Modal/web3modal/
     walletconnect: {
@@ -53,7 +53,9 @@ const Connect = () => {
 
     const [account] = await provider.request({ method: "eth_accounts" });
 
-    setConnection(account, new providers.Web3Provider(provider));
+    if (account) {
+      setConnection(account, new providers.Web3Provider(provider));
+    }
   }, [setConnection]);
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -28,7 +28,6 @@ import Slider from "@material-ui/core/Slider";
 import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
-import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -90,13 +89,13 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const handleBuyClick = (
     index: number,
     plan: IPlanWithExecutions,
-    executionsAmount: number
+    executionsQuantity: number
   ) => {
     // TODO: validate purchase fields
-    const isValid = executionsAmount > 0 ? true : false;
+    const isValid = executionsQuantity > 0 ? true : false;
 
     if (isValid) {
-      purchaseExecutions(provider, index, executionsAmount);
+      purchaseExecutions(provider, index, executionsQuantity);
     }
   };
 
@@ -163,7 +162,7 @@ const PlanRow: React.FC<{
   onBuyClick?: (
     index: number,
     plan: IPlanWithExecutions,
-    executionsAmount: number
+    executionsQuantity: number
   ) => void;
   isLoading: boolean;
 }> = ({ index, plan, onBuyClick, isLoading }) => {
@@ -208,7 +207,7 @@ const PlanRow: React.FC<{
           </Typography>
           <br />
           <Typography
-            id="executionsAmountSlider"
+            id="executionsQuantitySlider"
             variant="subtitle2"
             gutterBottom
           >
@@ -217,7 +216,7 @@ const PlanRow: React.FC<{
           <Slider
             disabled={isLoading}
             value={buyingExecutions}
-            aria-labelledby="executionsAmountSlider"
+            aria-labelledby="executionsQuantitySlider"
             step={10}
             valueLabelDisplay="auto"
             onChange={(event, value: number | number[]) => {
@@ -249,9 +248,11 @@ const PlanRow: React.FC<{
         style={{ justifyContent: "space-between", flexWrap: "wrap" }}
       >
         <Typography variant="caption">
-          {`Total: ${buyingExecutions} x ${plan.pricePerExecution.toHexString()} (token) = ${plan.pricePerExecution
-            .mul(buyingExecutions)
-            .toHexString()} (token)`}
+          {`Total: ${buyingExecutions} x ${formatPrice(
+            plan.pricePerExecution
+          )} ${plan.symbol} = ${formatPrice(
+            plan.pricePerExecution.mul(buyingExecutions)
+          )} ${plan.symbol}`}
         </Typography>
         <div
           style={{

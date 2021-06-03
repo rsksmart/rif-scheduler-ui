@@ -1,4 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber";
+import { Contract } from "@ethersproject/contracts";
 import { RifScheduler } from "@rsksmart/rif-scheduler-sdk";
 import { IPlan } from "@rsksmart/rif-scheduler-sdk/dist/types";
 import create from "zustand";
@@ -9,6 +10,7 @@ import { ENetwork } from "../shared/types";
 
 export interface IPlanWithExecutions extends IPlan {
   remainingExecutions: number;
+  symbol: string;
 }
 
 export interface IProvider {
@@ -79,11 +81,26 @@ const useProviders = create<IUseProviders>(
         while (keepLoadingPlans) {
           try {
             const plan = await rifScheduler.getPlan(index);
-            const remainingExecutions = await rifScheduler.remainingExecutions(
-              BigNumber.from(index)
-            );
 
-            provider.plans.push({ ...plan, remainingExecutions });
+            let remainingExecutions = -1;
+            if (rifScheduler.signer) {
+              remainingExecutions = await rifScheduler.remainingExecutions(
+                BigNumber.from(index)
+              );
+            }
+
+            const tokenContract = new Contract(
+              plan.token,
+              ["function symbol() view returns (string)"],
+              rifScheduler.provider
+            );
+            const tokenSymbol = await tokenContract.symbol();
+
+            provider.plans.push({
+              ...plan,
+              symbol: tokenSymbol,
+              remainingExecutions,
+            });
 
             index++;
           } catch (error) {
