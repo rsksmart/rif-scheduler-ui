@@ -25,7 +25,10 @@ const useConnector = create<IUseConnector>((set, get) => ({
 
     const rifScheduler = new RifScheduler(
       environment.RIF_ONE_SHOOT_SCHEDULER_PROVIDER,
-      signer as any
+      signer as any,
+      {
+        supportedER677Tokens: ["0x19f64674D8a5b4e652319F5e239EFd3bc969a1FE"],
+      }
     );
 
     set((state) => ({

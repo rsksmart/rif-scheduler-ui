@@ -1,16 +1,17 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 import { RifScheduler } from "@rsksmart/rif-scheduler-sdk";
-import { IPlan } from "@rsksmart/rif-scheduler-sdk/dist/types";
+import { IPlanResponse } from "@rsksmart/rif-scheduler-sdk/dist/types";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import environment from "../shared/environment";
 import localbasePersist from "../shared/localbasePersist";
 import { ENetwork } from "../shared/types";
 
-export interface IPlanWithExecutions extends IPlan {
-  remainingExecutions: number;
+export interface IPlan extends IPlanResponse {
+  remainingExecutions: BigNumber | null;
   symbol: string;
+  decimals: number;
 }
 
 export interface IProvider {
@@ -18,7 +19,7 @@ export interface IProvider {
   name: string;
   network: ENetwork;
   address: string;
-  plans: IPlanWithExecutions[];
+  plans: IPlan[];
 }
 
 export interface IUseProviders {
@@ -29,8 +30,9 @@ export interface IUseProviders {
   load: (rifScheduler: RifScheduler) => Promise<void>;
   purchaseExecutions: (
     provider: IProvider,
-    plan: number,
-    executionsAmount: number
+    planIndex: number,
+    executionsAmount: number,
+    rifScheduler: RifScheduler
   ) => Promise<void>;
 }
 
@@ -41,25 +43,33 @@ const useProviders = create<IUseProviders>(
       isLoading: false,
       purchaseExecutions: async (
         provider: IProvider,
-        plan: number,
-        executionsAmount: number
+        planIndex: number,
+        executionsQuantity: number,
+        rifScheduler: RifScheduler
       ) => {
         set(() => ({
           isLoading: true,
         }));
 
-        setTimeout(() => {
-          // TODO: use the sdk to purchase more executions
+        // const plan = provider.plans[planIndex];
 
-          const result = { ...provider, plans: [...provider.plans] };
+        // const totalAmount = plan.pricePerExecution.mul(executionsQuantity)
 
-          result.plans[plan].remainingExecutions += executionsAmount;
+        const purchaseTransaction = await rifScheduler.purchasePlan(
+          planIndex,
+          executionsQuantity
+        );
 
-          set((state) => ({
-            providers: { ...state.providers, [result.id]: result },
-            isLoading: false,
-          }));
-        }, 1000);
+        await purchaseTransaction.wait(environment.REACT_APP_CONFIRMATIONS);
+
+        const result = { ...provider, plans: [...provider.plans] };
+        result.plans[planIndex].remainingExecutions =
+          await rifScheduler.remainingExecutions(planIndex);
+
+        set((state) => ({
+          providers: { ...state.providers, [result.id]: result },
+          isLoading: false,
+        }));
       },
       load: async (rifScheduler: RifScheduler) => {
         set(() => ({
@@ -76,38 +86,32 @@ const useProviders = create<IUseProviders>(
           plans: [],
         };
 
-        let keepLoadingPlans = true;
-        let index = 0;
-        while (keepLoadingPlans) {
-          try {
-            const plan = await rifScheduler.getPlan(index);
+        const plansCount = await rifScheduler.getPlansCount();
+        for (let index = 0; plansCount.gt(index); index++) {
+          const plan = await rifScheduler.getPlan(index);
 
-            let remainingExecutions = -1;
-            if (rifScheduler.signer) {
-              remainingExecutions = await rifScheduler.remainingExecutions(
-                BigNumber.from(index)
-              );
-            }
-
-            const tokenContract = new Contract(
-              plan.token,
-              ["function symbol() view returns (string)"],
-              rifScheduler.provider
-            );
-            const tokenSymbol = await tokenContract.symbol();
-
-            provider.plans.push({
-              ...plan,
-              symbol: tokenSymbol,
-              remainingExecutions,
-            });
-
-            index++;
-          } catch (error) {
-            // TODO: change this when getPlansLength exist in the sdk
-            console.log("provider", rifScheduler, error, index);
-            keepLoadingPlans = false;
+          let remainingExecutions = null;
+          if (rifScheduler.signer) {
+            remainingExecutions = await rifScheduler.remainingExecutions(index);
           }
+
+          const tokenContract = new Contract(
+            plan.token,
+            [
+              "function symbol() view returns (string)",
+              "function decimals() view returns (uint8)",
+            ],
+            rifScheduler.provider
+          );
+          const tokenSymbol = await tokenContract.symbol();
+          const tokenDecimals = await tokenContract.decimals();
+
+          provider.plans.push({
+            ...plan,
+            symbol: tokenSymbol,
+            decimals: tokenDecimals,
+            remainingExecutions,
+          });
         }
 
         set((state) => ({

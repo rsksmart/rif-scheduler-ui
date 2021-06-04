@@ -18,6 +18,10 @@ import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
+import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
+import { useSnackbar } from "notistack";
+import useConnector from "../connect/useConnector";
+import shallow from "zustand/shallow";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -52,9 +56,32 @@ const Item: React.FC<{
   provider?: IProvider;
 }> = ({ item, contract, provider }) => {
   const classes = useRowStyles({ color: item.color });
+  const { enqueueSnackbar } = useSnackbar();
+  const [updateStatus, isLoading] = useSchedule(
+    (state) => [state.updateStatus, state.isLoading],
+    shallow
+  );
+
+  const rifScheduler = useConnector((state) => state.rifScheduler);
+
+  const handleUpdateStatusClick = () => {
+    updateStatus(item.id!, rifScheduler!);
+  };
+
+  const handleItemClick = () => {
+    if (!navigator?.clipboard) {
+      enqueueSnackbar("Your browser can't access the clipboard", {
+        variant: "error",
+      });
+      return;
+    }
+
+    navigator.clipboard.writeText(item.id as string);
+    enqueueSnackbar("Copied!");
+  };
 
   return (
-    <ListItem button className={classes.row}>
+    <ListItem button className={classes.row} onClick={handleItemClick}>
       <ListItemText
         primary={item.title}
         secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")} | ${
@@ -64,12 +91,21 @@ const Item: React.FC<{
       />
       <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
       <ListItemText
-        primary={contract?.name}
+        primary={
+          <span>
+            {contract?.name}&nbsp;&#10140;&nbsp;
+            {hyphensAndCamelCaseToWords(item.contractMethod)}
+          </span>
+        }
         secondary={`${item.network} | ${provider?.name}`}
         className={classes.part}
       />
       <ListItemSecondaryAction>
-        <IconButton edge="end">
+        <IconButton
+          edge="end"
+          onClick={handleUpdateStatusClick}
+          disabled={isLoading}
+        >
           <RefreshIcon style={{ color: item.color }} />
         </IconButton>
       </ListItemSecondaryAction>

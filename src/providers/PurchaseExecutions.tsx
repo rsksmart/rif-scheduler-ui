@@ -12,7 +12,7 @@ import {
   makeStyles,
 } from "@material-ui/core/styles";
 import PriceIcon from "@material-ui/icons/AccountBalanceWallet";
-import useProviders, { IPlanWithExecutions, IProvider } from "./useProviders";
+import useProviders, { IPlan, IProvider } from "./useProviders";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
@@ -28,6 +28,7 @@ import Slider from "@material-ui/core/Slider";
 import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
+import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -73,6 +74,8 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const rifScheduler = useConnector((state) => state.rifScheduler);
+
   const [purchaseExecutions, isLoading] = useProviders(
     (state) => [state.purchaseExecutions, state.isLoading],
     shallow
@@ -88,14 +91,14 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
 
   const handleBuyClick = (
     index: number,
-    plan: IPlanWithExecutions,
+    plan: IPlan,
     executionsQuantity: number
   ) => {
     // TODO: validate purchase fields
     const isValid = executionsQuantity > 0 ? true : false;
 
     if (isValid) {
-      purchaseExecutions(provider, index, executionsQuantity);
+      purchaseExecutions(provider, index, executionsQuantity, rifScheduler!);
     }
   };
 
@@ -158,12 +161,8 @@ export default PurchaseExecutions;
 
 const PlanRow: React.FC<{
   index: number;
-  plan: IPlanWithExecutions;
-  onBuyClick?: (
-    index: number,
-    plan: IPlanWithExecutions,
-    executionsQuantity: number
-  ) => void;
+  plan: IPlan;
+  onBuyClick?: (index: number, plan: IPlan, executionsQuantity: number) => void;
   isLoading: boolean;
 }> = ({ index, plan, onBuyClick, isLoading }) => {
   const classes = useStyles();
@@ -197,7 +196,7 @@ const PlanRow: React.FC<{
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <PriceIcon />
             <Typography variant="h5">
-              {formatPrice(plan.pricePerExecution)}
+              {formatPrice(plan.pricePerExecution, plan.decimals)}
             </Typography>
           </div>
         </div>
@@ -249,9 +248,11 @@ const PlanRow: React.FC<{
       >
         <Typography variant="caption">
           {`Total: ${buyingExecutions} x ${formatPrice(
-            plan.pricePerExecution
+            plan.pricePerExecution,
+            plan.decimals
           )} ${plan.symbol} = ${formatPrice(
-            plan.pricePerExecution.mul(buyingExecutions)
+            plan.pricePerExecution.mul(buyingExecutions),
+            plan.decimals
           )} ${plan.symbol}`}
         </Typography>
         <div

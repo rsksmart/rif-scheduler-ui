@@ -21,7 +21,6 @@ import { CardActions } from "@material-ui/core";
 import ColorSelector from "./ColorSelector";
 import History from "./History";
 import useSchedule, { IScheduleItem } from "./useSchedule";
-import { v4 as uuidv4 } from "uuid";
 import { ENetwork } from "../shared/types";
 import useProviders from "../providers/useProviders";
 import useContracts from "../contracts/useContracts";
@@ -32,6 +31,8 @@ import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import { fromBigNumberToHms } from "../shared/formatters";
+import useConnector from "../connect/useConnector";
+import { useSnackbar } from "notistack";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -59,6 +60,12 @@ const Schedule = () => {
 
   const providers = useProviders((state) => state.providers);
   const contracts = useContracts((state) => state.contracts);
+  const [rifScheduler, account] = useConnector(
+    (state) => [state.rifScheduler, state.account],
+    shallow
+  );
+
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     if (!isLoading) {
@@ -161,10 +168,20 @@ const Schedule = () => {
     }
 
     if (isValid && isContractFieldsValid) {
-      scheduleAndSave({
-        ...(fields as IScheduleItem),
-        id: fields?.id ?? uuidv4(),
-      });
+      scheduleAndSave(
+        fields as IScheduleItem,
+        contracts[fields!.contractId!],
+        rifScheduler!,
+        account!,
+        () =>
+          enqueueSnackbar("Scheduled transaction confirmed!", {
+            variant: "success",
+          }),
+        (message) =>
+          enqueueSnackbar(message, {
+            variant: "error",
+          })
+      );
     }
   };
 

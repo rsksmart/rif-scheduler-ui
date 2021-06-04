@@ -50,11 +50,11 @@ function App() {
           horizontal: "left",
         }}
         ref={notistackRef}
-        action={(key) => (
-          <Button color={"primary"} onClick={onClickDismiss(key)}>
-            Close
-          </Button>
-        )}
+        // action={(key) => (
+        //   <Button color={"primary"} onClick={onClickDismiss(key)}>
+        //     Close
+        //   </Button>
+        // )}
       >
         <Router>
           {!isConnected && <PublicRoutes />}
