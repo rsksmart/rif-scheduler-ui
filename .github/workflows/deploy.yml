@@ -1,0 +1,38 @@
+name: RIF Schedulers frontend deploy to prod
+on:
+  pull_request:
+    branches:
+      - 'main'
+    types: [closed]
+
+jobs:
+  main_build_and_deploy:
+
+    if: github.event.pull_request.merged == true
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: npm i
+
+    - name: Build site
+      run: npm run build
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy site to S3
+      run: |
+        aws s3 sync --delete --only-show-errors build/ ${{ secrets.S3_BUCKET }}
+
+    - name: Invalidate CloudFront cache
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION }} --paths "/*"
