@@ -1,4 +1,5 @@
-name: RIF Schedulers frontend deploy to prod
+name: deploy
+
 on:
   push:
     branches:
