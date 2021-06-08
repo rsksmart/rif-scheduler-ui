@@ -1,9 +1,8 @@
 name: RIF Schedulers frontend deploy to prod
 on:
-  pull_request:
+  push:
     branches:
       - 'main'
-    types: [closed]
 
 jobs:
   main_build_and_deploy:
