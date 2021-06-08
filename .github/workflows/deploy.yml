@@ -8,8 +8,6 @@ on:
 jobs:
   main_build_and_deploy:
 
-    if: github.event.pull_request.merged == true
-
     runs-on: ubuntu-latest
 
     steps:
