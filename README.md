@@ -1,18 +1,34 @@
+<p align="middle">
+    <img src="https://www.rifos.org/assets/img/logo.svg" alt="logo" height="100" >
+</p>
+<h3 align="middle">RIF Scheduler UI</h3>
+<p align="middle"><a href="http://scheduler.rifos.org/" target="_blank">scheduler.rifos.org</a></p>
+<p align="middle">
+    <a href="https://developers.rsk.co/rif/scheduler">
+        <img src="https://img.shields.io/badge/-docs-brightgreen" alt="docs" />
+    </a>
+    <a href="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/deploy.yml" alt="ci">
+        <img src="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/deploy.yml/badge.svg" alt="deploy" />
+    </a>
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/alerts/">
+        <img src="https://img.shields.io/lgtm/alerts/github/rsksmart/rif-scheduler-services" alt="alerts">
+    </a>
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/context:javascript">
+        <img src="https://img.shields.io/lgtm/grade/javascript/github/rsksmart/rif-scheduler-services">
+    </a>
+</p>
+
 ## Run for development
 
 Install dependencies:
 
 ```sh
-npm i
-npm start
+yarn
+yarn start
 ```
 
 ### Build for production
 
 ```sh
-npm run build
+yarn build
 ```
-
-## Demo
-
-[https://rif-scheduler-poc.web.app/](https://rif-scheduler-poc.web.app/)
