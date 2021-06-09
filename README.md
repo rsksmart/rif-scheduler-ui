@@ -7,8 +7,8 @@
     <a href="https://developers.rsk.co/rif/scheduler">
         <img src="https://img.shields.io/badge/-docs-brightgreen" alt="docs" />
     </a>
-    <a href="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/deploy.yml" alt="ci">
-        <img src="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/deploy.yml/badge.svg" alt="deploy" />
+    <a href="https://github.com/rsksmart/rif-scheduler-ui-poc/actions/workflows/deploy.yml" alt="ci">
+        <img src="https://github.com/rsksmart/rif-scheduler-ui-poc/actions/workflows/deploy.yml/badge.svg" alt="deploy" />
     </a>
     <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/alerts/">
         <img src="https://img.shields.io/lgtm/alerts/github/rsksmart/rif-scheduler-services" alt="alerts">
