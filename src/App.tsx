@@ -17,7 +17,6 @@ import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import shallow from "zustand/shallow";
 import Account from "./connect/Account";
-import { Button } from "@material-ui/core";
 
 function App() {
   const loadProviders = useProviders((state) => state.load);
@@ -36,9 +35,9 @@ function App() {
   }, [loadProviders, rifScheduler]);
 
   const notistackRef = useRef<any>(null);
-  const onClickDismiss = (key: any) => () => {
-    notistackRef?.current?.closeSnackbar(key);
-  };
+  // const onClickDismiss = (key: any) => () => {
+    // notistackRef?.current?.closeSnackbar(key);
+  // };
 
   return (
     <ThemeProvider theme={theme}>

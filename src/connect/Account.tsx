@@ -37,7 +37,7 @@ const Account = () => {
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [setConnection, account] = useConnector(
+  const [_, account] = useConnector(
     (state) => [state.setConnection, state.account],
     shallow
   );
