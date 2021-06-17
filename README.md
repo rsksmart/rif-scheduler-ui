@@ -10,11 +10,11 @@
     <a href="https://github.com/rsksmart/rif-scheduler-ui-poc/actions/workflows/deploy.yml" alt="ci">
         <img src="https://github.com/rsksmart/rif-scheduler-ui-poc/actions/workflows/deploy.yml/badge.svg" alt="deploy" />
     </a>
-    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/alerts/">
-        <img src="https://img.shields.io/lgtm/alerts/github/rsksmart/rif-scheduler-services" alt="alerts">
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-ui-poc/alerts/">
+        <img src="https://img.shields.io/lgtm/alerts/github/rsksmart/rif-scheduler-ui-poc" alt="alerts">
     </a>
-    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/context:javascript">
-        <img src="https://img.shields.io/lgtm/grade/javascript/github/rsksmart/rif-scheduler-services">
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-ui-poc/context:javascript">
+        <img src="https://img.shields.io/lgtm/grade/javascript/github/rsksmart/rif-scheduler-ui-poc">
     </a>
 </p>
 
