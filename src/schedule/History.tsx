@@ -85,7 +85,7 @@ const Item: React.FC<{
       <ListItemText
         primary={item.title}
         secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")} | ${
-          ExecutionStateDescriptions[item.state ?? ExecutionState.Scheduled]
+          ExecutionStateDescriptions[item.state ?? ExecutionState.NotScheduled]
         }`}
         className={classes.part}
       />
