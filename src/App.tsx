@@ -15,29 +15,21 @@ import Contracts from "./contracts/Contracts";
 import useProviders from "./providers/useProviders";
 import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
-import shallow from "zustand/shallow";
 import Account from "./connect/Account";
+import useRifScheduler from "./providers/useRifScheduler";
 
 function App() {
+  const isConnected = useConnector(state => state.isConnected);
+
+  const rifScheduler = useRifScheduler()
+
   const loadProviders = useProviders((state) => state.load);
-
-  const [isConnected, load, rifScheduler] = useConnector(
-    (state) => [state.isConnected, state.load, state.rifScheduler],
-    shallow
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   useEffect(() => {
     if (rifScheduler) loadProviders(rifScheduler);
   }, [loadProviders, rifScheduler]);
 
   const notistackRef = useRef<any>(null);
-  // const onClickDismiss = (key: any) => () => {
-    // notistackRef?.current?.closeSnackbar(key);
-  // };
 
   return (
     <ThemeProvider theme={theme}>
@@ -48,12 +40,8 @@ function App() {
           vertical: "top",
           horizontal: "left",
         }}
+        autoHideDuration={1000}
         ref={notistackRef}
-        // action={(key) => (
-        //   <Button color={"primary"} onClick={onClickDismiss(key)}>
-        //     Close
-        //   </Button>
-        // )}
       >
         <Router>
           {!isConnected && <PublicRoutes />}

@@ -50,11 +50,7 @@ const useProviders = create<IUseProviders>(
         set(() => ({
           isLoading: true,
         }));
-
-        // const plan = provider.plans[planIndex];
-
-        // const totalAmount = plan.pricePerExecution.mul(executionsQuantity)
-
+        
         const purchaseTransaction = await rifScheduler.purchasePlan(
           planIndex,
           executionsQuantity
@@ -76,12 +72,12 @@ const useProviders = create<IUseProviders>(
           isLoading: true,
         }));
 
-        const contractAddress = environment.RIF_ONE_SHOOT_SCHEDULER_PROVIDER;
+        const contractAddress = environment.RIF_SCHEDULER_PROVIDER;
 
         const provider: IProvider = {
-          id: `${ENetwork.Testnet}-${contractAddress}`,
+          id: `${ENetwork.RSKTestnet}-${contractAddress}`,
           name: "Rif Provider",
-          network: ENetwork.Testnet,
+          network: ENetwork.RSKTestnet,
           address: contractAddress,
           plans: [],
         };

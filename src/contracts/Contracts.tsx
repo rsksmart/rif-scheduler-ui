@@ -10,6 +10,8 @@ import { useState } from "react";
 import { CardActionArea } from "@material-ui/core";
 import StoragePersistAlert from "./StoragePersistAlert";
 import contractSvg from "../assets/illustrations/contractBolt.svg";
+import { ENetwork } from "../shared/types";
+import NetworkLabel from "../connect/NetworkLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -75,7 +77,7 @@ const Contracts = () => {
   );
 };
 
-const ContractButton = ({ name, network, onClick }: any) => {
+const ContractButton = ({ name, network, onClick }: { name: string, network: ENetwork, onClick: any }) => {
   return (
     <Card>
       <CardActionArea
@@ -91,9 +93,7 @@ const ContractButton = ({ name, network, onClick }: any) => {
           <Typography gutterBottom variant="h5" component="h2">
             {name}
           </Typography>
-          <Typography variant="body2" color="textSecondary" component="span">
-            {network}
-          </Typography>
+          <NetworkLabel network={network} />
         </CardContent>
       </CardActionArea>
     </Card>

@@ -12,7 +12,7 @@ import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
 import useSchedule, { IScheduleItem } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import { ExecutionState, ExecutionStateDescriptions } from "../shared/types";
+import { ExecutionState, ExecutionStateDescriptions, NetworkName } from "../shared/types";
 import useProviders, { IProvider } from "../providers/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
@@ -20,8 +20,8 @@ import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import { useSnackbar } from "notistack";
-import useConnector from "../connect/useConnector";
 import shallow from "zustand/shallow";
+import useRifScheduler from "../providers/useRifScheduler";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -62,7 +62,7 @@ const Item: React.FC<{
     shallow
   );
 
-  const rifScheduler = useConnector((state) => state.rifScheduler);
+  const rifScheduler = useRifScheduler();
 
   const handleUpdateStatusClick = () => {
     updateStatus(item.id!, rifScheduler!);
@@ -97,7 +97,7 @@ const Item: React.FC<{
             {hyphensAndCamelCaseToWords(item.contractMethod)}
           </span>
         }
-        secondary={`${item.network} | ${provider?.name}`}
+        secondary={`${NetworkName[item.network]} | ${provider?.name}`}
         className={classes.part}
       />
       <ListItemSecondaryAction>

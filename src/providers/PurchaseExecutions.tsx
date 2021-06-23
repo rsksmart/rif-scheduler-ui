@@ -28,7 +28,9 @@ import Slider from "@material-ui/core/Slider";
 import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
-import useConnector from "../connect/useConnector";
+import useRifScheduler from "./useRifScheduler";
+import { ENetwork } from "../shared/types";
+import NetworkLabel from "../connect/NetworkLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -74,7 +76,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const rifScheduler = useConnector((state) => state.rifScheduler);
+  const rifScheduler = useRifScheduler();
 
   const [purchaseExecutions, isLoading] = useProviders(
     (state) => [state.purchaseExecutions, state.isLoading],
@@ -285,7 +287,7 @@ const PlanRow: React.FC<{
   );
 };
 
-const ProviderButton = ({ name, network, onClick }: any) => {
+const ProviderButton = ({ name, network, onClick }: { name: string, network: ENetwork, onClick: any }) => {
   return (
     <Card>
       <CardActionArea
@@ -301,9 +303,7 @@ const ProviderButton = ({ name, network, onClick }: any) => {
           <Typography gutterBottom variant="h5" component="h2">
             {name}
           </Typography>
-          <Typography variant="body2" color="textSecondary" component="span">
-            {network}
-          </Typography>
+          <NetworkLabel network={network} />
         </CardContent>
       </CardActionArea>
     </Card>

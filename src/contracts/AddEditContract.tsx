@@ -9,13 +9,9 @@ import { useTheme } from "@material-ui/core/styles";
 import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@material-ui/icons/AddCircle";
 import TextField from "@material-ui/core/TextField";
-import FormControl from "@material-ui/core/FormControl";
-import InputLabel from "@material-ui/core/InputLabel";
-import Select from "@material-ui/core/Select";
-import MenuItem from "@material-ui/core/MenuItem";
-import FormHelperText from "@material-ui/core/FormHelperText";
 import useContracts, { IContract } from "./useContracts";
-import { ENetwork } from "../shared/types";
+import useConnector from "../connect/useConnector";
+import NetworkLabel from "../connect/NetworkLabel";
 
 const AddEditContract = ({
   hideButton = false,
@@ -31,6 +27,8 @@ const AddEditContract = ({
     useState<Partial<IContract> | null>(initialFields);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const connectedToNetwork = useConnector(state => state.network)
 
   const save = useContracts((state) => state.save);
 
@@ -48,12 +46,13 @@ const AddEditContract = ({
   const handleSave = () => {
     // TODO: validate contract fields
     const isValid =
-      fields && fields.ABI && fields.address && fields.name && fields.network;
+      fields && fields.ABI && fields.address && fields.name;
 
     if (isValid) {
       save({
         ...(fields as IContract),
-        id: fields?.id ?? `${fields?.network}-${fields?.address}`,
+        network: connectedToNetwork!,
+        id: fields?.id ?? `${connectedToNetwork}-${fields?.address}`,
       });
 
       setFields(null);
@@ -85,7 +84,10 @@ const AddEditContract = ({
         onClose={handleClose}
       >
         <DialogTitle>
-          {fields?.id ? "Edit contract" : "Register new contract"}
+          <div style={{display:"flex", flex:1}}>
+            <div style={{display:"flex", flex:1}}>{fields?.id ? "Edit contract" : "Register new contract"}</div>
+            <NetworkLabel />
+          </div>
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -98,20 +100,6 @@ const AddEditContract = ({
             onChange={handleFieldChange("name")}
             value={fields?.name}
           />
-          <FormControl variant="filled" fullWidth margin="dense">
-            <InputLabel id="add-contract-network">Network</InputLabel>
-            <Select
-              labelId="add-contract-network"
-              onChange={handleFieldChange("network")}
-              value={fields?.network}
-            >
-              <MenuItem value={ENetwork.Mainnet}>Mainnet</MenuItem>
-              <MenuItem value={ENetwork.Testnet}>Testnet</MenuItem>
-            </Select>
-            <FormHelperText>
-              Select the network you want to work with.
-            </FormHelperText>
-          </FormControl>
           <TextField
             margin="dense"
             label="Address"
@@ -128,7 +116,7 @@ const AddEditContract = ({
             variant="filled"
             fullWidth
             multiline
-            rows={4}
+            rows={8}
             onChange={handleFieldChange("ABI")}
             value={fields?.ABI}
           />

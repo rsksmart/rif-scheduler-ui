@@ -21,7 +21,6 @@ import { CardActions } from "@material-ui/core";
 import ColorSelector from "./ColorSelector";
 import History from "./History";
 import useSchedule, { IScheduleItem } from "./useSchedule";
-import { ENetwork } from "../shared/types";
 import useProviders from "../providers/useProviders";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
@@ -29,10 +28,11 @@ import { parseISO, isValid } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
-import ButtonGroup from "@material-ui/core/ButtonGroup";
 import { fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
+import useRifScheduler from "../providers/useRifScheduler";
+import NetworkLabel from "../connect/NetworkLabel"
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -49,9 +49,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const Schedule = () => {
   const classes = useStyles();
 
-  const [fields, setFields] = useState<Partial<IScheduleItem> | null>({
-    network: ENetwork.Testnet,
-  });
+  const [fields, setFields] = useState<Partial<IScheduleItem> | null>();
 
   const [scheduleAndSave, isLoading] = useSchedule(
     (state) => [state.scheduleAndSave, state.isLoading],
@@ -60,10 +58,8 @@ const Schedule = () => {
 
   const providers = useProviders((state) => state.providers);
   const contracts = useContracts((state) => state.contracts);
-  const [rifScheduler, account] = useConnector(
-    (state) => [state.rifScheduler, state.account],
-    shallow
-  );
+  const [account, connectedToNetwork] = useConnector(state => [state.account, state.network], shallow);
+  const rifScheduler = useRifScheduler();
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -77,17 +73,6 @@ const Schedule = () => {
     setFields((values) => ({
       ...values,
       executeAt: date && isValid(date) ? date.toISOString() : undefined,
-    }));
-  };
-
-  const handleNetworkChange = (event: any) => {
-    setFields((values) => ({
-      ...values,
-      network: event.target.value,
-      providerId: undefined,
-      contractId: undefined,
-      contractMethod: undefined,
-      contractFields: undefined,
     }));
   };
 
@@ -122,9 +107,7 @@ const Schedule = () => {
   };
 
   const handleClear = () => {
-    setFields((prev) => ({
-      network: prev?.network,
-    }));
+    setFields((prev) => ({}));
   };
 
   const abi = fields?.contractId
@@ -154,7 +137,6 @@ const Schedule = () => {
       fields.title &&
       fields.contractId &&
       fields.contractMethod &&
-      fields.network &&
       fields.executeAt &&
       fields.providerId &&
       fields.providerPlanIndex;
@@ -167,11 +149,11 @@ const Schedule = () => {
       if (!isContractFieldsValid) break;
     }
 
-    if (isValid && isContractFieldsValid) {
+    if (isValid && isContractFieldsValid && rifScheduler) {
       scheduleAndSave(
         fields as IScheduleItem,
-        contracts[fields!.contractId!],
-        rifScheduler!,
+        {...contracts[fields!.contractId!], network: connectedToNetwork!},
+        rifScheduler,
         account!,
         () =>
           enqueueSnackbar("Scheduled transaction confirmed!", {
@@ -191,30 +173,7 @@ const Schedule = () => {
         <CardHeader
           title={<Hidden xsDown>Schedule</Hidden>}
           action={
-            <ButtonGroup color="secondary" disabled={isLoading}>
-              <Button
-                style={{ textTransform: "none" }}
-                variant={
-                  fields?.network === ENetwork.Mainnet ? "contained" : undefined
-                }
-                onClick={() =>
-                  handleNetworkChange({ target: { value: ENetwork.Mainnet } })
-                }
-              >
-                Mainnet
-              </Button>
-              <Button
-                style={{ textTransform: "none" }}
-                variant={
-                  fields?.network === ENetwork.Testnet ? "contained" : undefined
-                }
-                onClick={() =>
-                  handleNetworkChange({ target: { value: ENetwork.Testnet } })
-                }
-              >
-                Testnet
-              </Button>
-            </ButtonGroup>
+            <NetworkLabel />
           }
         />
         <CardContent style={{ paddingTop: 0, paddingBottom: 0 }}>
@@ -279,7 +238,7 @@ const Schedule = () => {
                   <MenuItem disabled>None</MenuItem>
                   {Object.entries(providers)
                     .filter(
-                      ([id, provider]) => provider.network === fields?.network
+                      ([id, provider]) => provider.network === connectedToNetwork
                     )
                     .map(([id, provider]) => (
                       <MenuItem key={`schedule-provider-${id}`} value={id}>
@@ -343,7 +302,7 @@ const Schedule = () => {
                   <MenuItem disabled>None</MenuItem>
                   {Object.entries(contracts)
                     .filter(
-                      ([id, contract]) => contract.network === fields?.network
+                      ([id, contract]) => contract.network === connectedToNetwork
                     )
                     .map(([id, contract]) => (
                       <MenuItem key={`schedule-contract-${id}`} value={id}>

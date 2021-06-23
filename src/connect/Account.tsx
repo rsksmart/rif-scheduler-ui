@@ -37,8 +37,8 @@ const Account = () => {
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [, account] = useConnector(
-    (state) => [state.setConnection, state.account],
+  const [account, disconnect] = useConnector(
+    (state) => [state.account, state.disconnect],
     shallow
   );
 
@@ -71,7 +71,7 @@ const Account = () => {
               />
             </ListItem>
             <Divider />
-            <ListItem button>
+            <ListItem button onClick={disconnect}>
               <ListItemIcon>
                 <DisconnectIcon />
               </ListItemIcon>

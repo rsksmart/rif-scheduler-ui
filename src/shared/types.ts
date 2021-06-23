@@ -1,6 +1,15 @@
 export enum ENetwork {
-  Mainnet = "Mainnet",
-  Testnet = "Testnet",
+  NotSupported = -1,
+  RSKMainnet = 30,
+  RSKTestnet = 31,
+}
+
+export const SupportedNetworks = [ENetwork.RSKMainnet, ENetwork.RSKTestnet]
+
+export const NetworkName = {
+  [ENetwork.NotSupported]: "Unsupported network",
+  [ENetwork.RSKMainnet]: "RSK Mainnet",
+  [ENetwork.RSKTestnet]: "RSK Testnet"
 }
 
 export enum ExecutionState {
