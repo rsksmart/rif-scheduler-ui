@@ -17,6 +17,7 @@ import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
 import useRifScheduler from "./providers/useRifScheduler";
+import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 
 function App() {
   const isConnected = useConnector(state => state.isConnected);
@@ -43,6 +44,7 @@ function App() {
         autoHideDuration={1000}
         ref={notistackRef}
       >
+        <UnsupportedNetworkAlert />
         <Router>
           {!isConnected && <PublicRoutes />}
           {isConnected && <ConnectedRoutes />}

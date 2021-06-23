@@ -27,16 +27,26 @@ const useStyles = makeStyles((theme: Theme) =>
 const Connect = () => {
   const classes = useStyles();
 
-  const [connect, isLoading] = useConnector(
-    (state) => [state.connect, state.isLoading],
+  const [connect, disconnect, isLoading] = useConnector(
+    (state) => [state.connect, state.disconnect, state.isLoading],
     shallow
   );
 
   const handleConnect = useCallback(async () => {
-    const { provider, disconnect } = await rLogin.connect();
+    try {
+      const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      const timeout = (p: Promise<any>, ms: number) => Promise.race([p, wait(ms).then(() => {
+          throw new Error("Timeout after " + ms + " ms");
+      })]);
 
-    connect(provider, disconnect);
-  }, [connect]);
+      const { provider, disconnect } = await timeout(rLogin.connect(), 3000);
+      
+      connect(provider, disconnect);
+    } catch (error) {
+      console.error("handleConnect error:", error)
+      disconnect()
+    }
+  }, [connect, disconnect]);
 
   useEffect(() => {
     if (isRLoginConnected()) {

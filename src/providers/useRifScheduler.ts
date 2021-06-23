@@ -3,11 +3,10 @@ import useConnector from "../connect/useConnector";
 import environment from "../shared/environment";
 
 const useRifScheduler = () => {
-    const signer = useConnector(state => state.signer)
+    const [isConnected, isLoading, signer] = useConnector(state => [state.isConnected, state.isLoading, state.signer])
 
-    if (!signer)
+    if (!isConnected || isLoading || !signer)
         return null
-
 
     const rifScheduler = new RifScheduler(
         environment.RIF_SCHEDULER_PROVIDER,
