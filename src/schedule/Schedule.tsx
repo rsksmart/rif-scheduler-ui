@@ -17,7 +17,7 @@ import FormControl from "@material-ui/core/FormControl";
 import InputLabel from "@material-ui/core/InputLabel";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
-import { CardActions } from "@material-ui/core";
+import CardActions from "@material-ui/core/CardActions";
 import ColorSelector from "./ColorSelector";
 import History from "./History";
 import useSchedule, { IScheduleItem } from "./useSchedule";

@@ -6,7 +6,6 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
 import { useTheme } from "@material-ui/core/styles";
-import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@material-ui/icons/AddCircle";
 import TextField from "@material-ui/core/TextField";
 import useContracts, { IContract } from "./useContracts";
@@ -68,13 +67,16 @@ const AddEditContract = ({
   return (
     <>
       {!hideButton && (
-        <IconButton
+        <Button
           aria-label="add contract"
+          color="primary"
+          variant="outlined"
           size="small"
+          endIcon={<AddIcon />}
           onClick={handleClickOpen}
         >
-          <AddIcon />
-        </IconButton>
+          Register
+        </Button>
       )}
       <Dialog
         fullScreen={fullScreen}

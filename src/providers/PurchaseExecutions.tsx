@@ -11,6 +11,7 @@ import {
   createStyles,
   makeStyles,
 } from "@material-ui/core/styles";
+import Chip from '@material-ui/core/Chip';
 import PriceIcon from "@material-ui/icons/AccountBalanceWallet";
 import useProviders, { IPlan, IProvider } from "./useProviders";
 import Card from "@material-ui/core/Card";
@@ -29,8 +30,6 @@ import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
 import useRifScheduler from "./useRifScheduler";
-import { ENetwork } from "../shared/types";
-import NetworkLabel from "../connect/NetworkLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -108,7 +107,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
     <>
       <ProviderButton
         name={provider.name}
-        network={provider.network}
+        plans={provider.plans}
         onClick={handleClickOpen}
       />
       <Dialog
@@ -124,19 +123,12 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
         >
           <div>
             <Typography component={"h2"} variant="h6">
-              Plans
+              {`${provider.name}'s plans`}
             </Typography>
           </div>
           <LoadingCircle isLoading={isLoading} />
         </DialogTitle>
         <DialogContent>
-          <Typography
-            variant="body2"
-            color="textSecondary"
-            component="p"
-            style={{ marginBottom: 16 }}
-          >{`${provider.name} / ${provider.network}`}</Typography>
-
           {provider.plans.map((plan, index) => (
             <PlanRow
               key={`plan-row-${provider.id}-${index}`}
@@ -183,6 +175,10 @@ const PlanRow: React.FC<{
         <div>
           <Typography className={classes.heading}>{`#${index + 1}`}</Typography>
         </div>
+        <div style={{marginLeft: 12}}>
+          {plan.active && <Chip variant="outlined" size="small" color="primary" label="Active" />}
+          {!plan.active && <Chip variant="outlined" size="small" color="secondary" label="Inactive" />}
+        </div>
         <div className={classes.columnWindow}>
           <Typography className={classes.secondaryHeading}>
             {`Window: ${fromBigNumberToHms(plan.window)}`}
@@ -215,7 +211,7 @@ const PlanRow: React.FC<{
             Select the quantity of executions to purchase
           </Typography>
           <Slider
-            disabled={isLoading}
+            disabled={isLoading || !plan.active}
             value={buyingExecutions}
             aria-labelledby="executionsQuantitySlider"
             step={10}
@@ -266,14 +262,14 @@ const PlanRow: React.FC<{
           }}
         >
           <Button
-            disabled={isLoading}
+            disabled={isLoading || !plan.active}
             size="small"
             onClick={() => setBuyingExecutions(0)}
           >
             Clear
           </Button>
           <Button
-            disabled={isLoading}
+            disabled={isLoading || !plan.active}
             size="small"
             color="primary"
             variant="outlined"
@@ -287,7 +283,9 @@ const PlanRow: React.FC<{
   );
 };
 
-const ProviderButton = ({ name, network, onClick }: { name: string, network: ENetwork, onClick: any }) => {
+const ProviderButton = ({ name, plans, onClick }: { name: string, plans: IPlan[], onClick: any }) => {
+  const plansWithRemainingExecutions = plans.filter(x=> x.remainingExecutions && x.remainingExecutions.gt(0))
+
   return (
     <Card>
       <CardActionArea
@@ -303,7 +301,11 @@ const ProviderButton = ({ name, network, onClick }: { name: string, network: ENe
           <Typography gutterBottom variant="h5" component="h2">
             {name}
           </Typography>
-          <NetworkLabel network={network} />
+          {plansWithRemainingExecutions.map((plan, index) => (
+            <Typography key={`plan-remaining-${plan.window.toString()}`} variant="body2" color="textSecondary" component="div">
+              {`Window ${fromBigNumberToHms(plan.window)}: ${plan.remainingExecutions} executions left`}
+            </Typography>
+          ))}
         </CardContent>
       </CardActionArea>
     </Card>

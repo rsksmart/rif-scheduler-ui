@@ -15,6 +15,8 @@ import {
 import AccountIcon from "@material-ui/icons/AccountBalanceWallet";
 import DisconnectIcon from "@material-ui/icons/ExitToApp";
 import { useSnackbar } from "notistack";
+import shortAddress from "../shared/shortAddress";
+import Hidden from '@material-ui/core/Hidden';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -50,7 +52,7 @@ const Account = () => {
       return;
     }
 
-    navigator.clipboard.writeText(account as string);
+    navigator.clipboard.writeText(account!);
     enqueueSnackbar("Copied!");
   };
 
@@ -66,7 +68,13 @@ const Account = () => {
               </ListItemIcon>
               <ListItemText
                 primary={"Wallet"}
-                secondary={account}
+                secondary={
+                  <>
+                    <Hidden smUp>{shortAddress(account!)}</Hidden>
+                    <Hidden xsDown>{account}</Hidden>
+                  </>
+                }
+                title={account}
                 classes={{ secondary: classes.overflowEllipsis }}
               />
             </ListItem>

@@ -10,8 +10,10 @@ import { useState } from "react";
 import { CardActionArea } from "@material-ui/core";
 import StoragePersistAlert from "./StoragePersistAlert";
 import contractSvg from "../assets/illustrations/contractBolt.svg";
-import { ENetwork } from "../shared/types";
 import NetworkLabel from "../connect/NetworkLabel";
+import CardActions from "@material-ui/core/CardActions";
+import shortAddress from "../shared/shortAddress";
+import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -32,16 +34,24 @@ const Contracts = () => {
 
   const [editing, setEditing] = useState<IContract | null>(null);
 
+  const connectedToNetwork = useConnector(state => state.network)
+
+  const networkContracts = Object.entries(contracts)
+    .filter(([id, contract])=> contract.network === connectedToNetwork)
+
   return (
     <Layout>
       <Card className={classes.root} variant="outlined">
-        <CardHeader action={<AddEditContract />} title="Contracts" />
+        <CardHeader action={<NetworkLabel />} title="Contracts" />
         <CardContent>
           <Typography variant="body2" color="textSecondary" component="p">
             Register your contracts here to be able to schedule their execution
             later.
           </Typography>
         </CardContent>
+        <CardActions style={{padding: 16, paddingTop: 0}}>
+          <AddEditContract />
+        </CardActions>
       </Card>
 
       <StoragePersistAlert />
@@ -64,11 +74,11 @@ const Contracts = () => {
           justifyContent: "space-between",
         }}
       >
-        {Object.entries(contracts).map(([id, contract]) => (
+        {networkContracts.map(([id, contract]) => (
           <ContractButton
             key={`contract-list-${id}`}
             name={contract.name}
-            network={contract.network}
+            address={contract.address}
             onClick={() => setEditing(contract)}
           />
         ))}
@@ -77,7 +87,7 @@ const Contracts = () => {
   );
 };
 
-const ContractButton = ({ name, network, onClick }: { name: string, network: ENetwork, onClick: any }) => {
+const ContractButton = ({ name, address, onClick }: { name: string, address: string, onClick: any }) => {
   return (
     <Card>
       <CardActionArea
@@ -93,7 +103,9 @@ const ContractButton = ({ name, network, onClick }: { name: string, network: ENe
           <Typography gutterBottom variant="h5" component="h2">
             {name}
           </Typography>
-          <NetworkLabel network={network} />
+          <Typography variant="body2" color="textSecondary" component="span">
+            {shortAddress(address)}
+          </Typography>
         </CardContent>
       </CardActionArea>
     </Card>
