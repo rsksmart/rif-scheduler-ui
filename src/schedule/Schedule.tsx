@@ -151,8 +151,8 @@ const Schedule = () => {
 
     if (isValid && isContractFieldsValid && rifScheduler) {
       scheduleAndSave(
-        fields as IScheduleItem,
-        {...contracts[fields!.contractId!], network: connectedToNetwork!},
+        {...fields, network: connectedToNetwork!} as IScheduleItem,
+        contracts[fields!.contractId!],
         rifScheduler,
         account!,
         () =>

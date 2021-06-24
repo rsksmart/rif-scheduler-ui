@@ -12,7 +12,6 @@ import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
 import useSchedule, { IScheduleItem } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import { ExecutionState, ExecutionStateDescriptions, NetworkName } from "../shared/types";
 import useProviders, { IProvider } from "../providers/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
@@ -22,6 +21,9 @@ import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import { useSnackbar } from "notistack";
 import shallow from "zustand/shallow";
 import useRifScheduler from "../providers/useRifScheduler";
+import useConnector from "../connect/useConnector";
+import StatusLabel from "./StatusLabel";
+import { Hidden } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -82,24 +84,29 @@ const Item: React.FC<{
 
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
-      <ListItemText
-        primary={item.title}
-        secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")} | ${
-          ExecutionStateDescriptions[item.state ?? ExecutionState.NotScheduled]
-        }`}
-        className={classes.part}
-      />
-      <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
-      <ListItemText
-        primary={
-          <span>
-            {contract?.name}&nbsp;&#10140;&nbsp;
-            {hyphensAndCamelCaseToWords(item.contractMethod)}
-          </span>
-        }
-        secondary={`${NetworkName[item.network]} | ${provider?.name}`}
-        className={classes.part}
-      />
+      <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>
+        <ListItemText
+          className={classes.part}
+          primary={item.title}
+          secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")}`}
+        />
+        <div style={{paddingLeft:16, paddingRight:16}}>
+          <StatusLabel state={item.state} />
+        </div>
+      </div>
+      <Hidden xsDown>
+        <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
+        <ListItemText
+          primary={
+            <span>
+              {contract?.name}&nbsp;&#10140;&nbsp;
+              {hyphensAndCamelCaseToWords(item.contractMethod)}
+            </span>
+          }
+          secondary={provider?.name}
+          className={classes.part}
+        />
+      </Hidden>
       <ListItemSecondaryAction>
         <IconButton
           edge="end"
@@ -119,6 +126,8 @@ interface IGroupBy {
 
 const History = () => {
   const classes = useStyles();
+
+  const connectedToNetwork = useConnector(state => state.network)
 
   const [isFromThisMonth, setIsFromThisMonth] = useState(true);
 
@@ -142,7 +151,8 @@ const History = () => {
       );
     })
     .filter(([id, item]) =>
-      isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true
+      item.network === connectedToNetwork &&
+      (isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true)
     )
     .reduce((prev: any, [id, item]) => {
       const groupId = format(parseISO(item.executeAt), "MMM yyyy");
