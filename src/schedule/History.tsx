@@ -19,7 +19,7 @@ import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
-import useRifScheduler from "../providers/useRifScheduler";
+import useRIFScheduler from "../providers/useRIFScheduler";
 import useConnector from "../connect/useConnector";
 import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
@@ -64,7 +64,7 @@ const Item: React.FC<{
     shallow
   );
 
-  const rifScheduler = useRifScheduler();
+  const rifScheduler = useRIFScheduler();
 
   const handleUpdateStatusClick = () => {
     updateStatus(item.id!, rifScheduler!);

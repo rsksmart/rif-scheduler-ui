@@ -1,4 +1,4 @@
-import { executionFactory, RifScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { executionFactory, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
 import { parseISO } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import create from "zustand";
@@ -30,12 +30,12 @@ export interface IUseSchedule {
   };
   updateStatus: (
     executionId: string,
-    rifScheduler: RifScheduler
+    rifScheduler: RIFScheduler
   ) => Promise<void>;
   scheduleAndSave: (
     scheduleItem: IScheduleItem,
     contract: IContract,
-    rifScheduler: RifScheduler,
+    rifScheduler: RIFScheduler,
     myAccountAddress: string,
     onConfirmed: () => void,
     onFailed: (message: string) => void
@@ -47,7 +47,7 @@ const useSchedule = create<IUseSchedule>(
     (set, get) => ({
       isLoading: false,
       scheduleItems: {},
-      updateStatus: async (executionId: string, rifScheduler: RifScheduler) => {
+      updateStatus: async (executionId: string, rifScheduler: RIFScheduler) => {
         set(() => ({
           isLoading: true,
         }));
@@ -68,7 +68,7 @@ const useSchedule = create<IUseSchedule>(
       scheduleAndSave: async (
         scheduleItem: IScheduleItem,
         contract: IContract,
-        rifScheduler: RifScheduler,
+        rifScheduler: RIFScheduler,
         myAccountAddress: string,
         onConfirmed: () => void,
         onFailed: (message: string) => void
