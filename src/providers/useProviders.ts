@@ -12,6 +12,7 @@ export interface IPlan extends IPlanResponse {
   remainingExecutions: BigNumber | null;
   symbol: string;
   decimals: number;
+  isPurchaseConfirmed: boolean;
 }
 
 export interface IProvider {
@@ -29,10 +30,18 @@ export interface IUseProviders {
   isLoading: boolean;
   load: (rifScheduler: RifScheduler) => Promise<void>;
   purchaseExecutions: (
-    provider: IProvider,
+    providerId: string,
     planIndex: number,
     executionsAmount: number,
-    rifScheduler: RifScheduler
+    rifScheduler: RifScheduler,
+    onConfirmed: () => void,
+    onFailed: (message: string) => void
+  ) => Promise<void>;
+  updateRemainingExecutions: (
+    providerId: string,
+    planIndex: number,
+    rifScheduler: RifScheduler,
+    isPurchaseConfirmed?: boolean,
   ) => Promise<void>;
 }
 
@@ -41,29 +50,55 @@ const useProviders = create<IUseProviders>(
     (set, get) => ({
       providers: {},
       isLoading: false,
+      updateRemainingExecutions: async (
+        providerId: string,
+        planIndex: number,
+        rifScheduler: RifScheduler,
+        isPurchaseConfirmed?: boolean,
+      ) => {
+        const remainingExecutions = await rifScheduler.remainingExecutions(planIndex)
+
+        const provider = get().providers[providerId]
+
+        const result = { ...provider, plans: [...provider.plans] };
+        result.plans[planIndex].remainingExecutions = remainingExecutions
+        
+        if (isPurchaseConfirmed) {
+          result.plans[planIndex].isPurchaseConfirmed = true
+        }
+
+        set((state) => ({
+          providers: { ...state.providers, [result.id]: result }
+        }));
+      },
       purchaseExecutions: async (
-        provider: IProvider,
+        providerId: string,
         planIndex: number,
         executionsQuantity: number,
-        rifScheduler: RifScheduler
+        rifScheduler: RifScheduler,
+        onConfirmed: () => void,
+        onFailed: (message: string) => void
       ) => {
-        set(() => ({
+        set((state) => ({
           isLoading: true,
         }));
-        
+
         const purchaseTransaction = await rifScheduler.purchasePlan(
           planIndex,
           executionsQuantity
         );
 
-        await purchaseTransaction.wait(environment.REACT_APP_CONFIRMATIONS);
+        get().updateRemainingExecutions(providerId, planIndex, rifScheduler, false)
 
-        const result = { ...provider, plans: [...provider.plans] };
-        result.plans[planIndex].remainingExecutions =
-          await rifScheduler.remainingExecutions(planIndex);
+        purchaseTransaction
+          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .then(async (receipt) => {
+            onConfirmed()
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => get().updateRemainingExecutions(providerId, planIndex, rifScheduler, true));
 
         set((state) => ({
-          providers: { ...state.providers, [result.id]: result },
           isLoading: false,
         }));
       },
@@ -107,6 +142,7 @@ const useProviders = create<IUseProviders>(
             symbol: tokenSymbol,
             decimals: tokenDecimals,
             remainingExecutions,
+            isPurchaseConfirmed: true
           });
         }
 

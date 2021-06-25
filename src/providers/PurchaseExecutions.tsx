@@ -11,7 +11,6 @@ import {
   createStyles,
   makeStyles,
 } from "@material-ui/core/styles";
-import Chip from '@material-ui/core/Chip';
 import PriceIcon from "@material-ui/icons/AccountBalanceWallet";
 import useProviders, { IPlan, IProvider } from "./useProviders";
 import Card from "@material-ui/core/Card";
@@ -30,6 +29,8 @@ import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
 import useRifScheduler from "./useRifScheduler";
+import { useSnackbar } from "notistack";
+import StatusLabel from "./StatusLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -75,6 +76,8 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const { enqueueSnackbar } = useSnackbar();
+
   const rifScheduler = useRifScheduler();
 
   const [purchaseExecutions, isLoading] = useProviders(
@@ -98,8 +101,21 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
     // TODO: validate purchase fields
     const isValid = executionsQuantity > 0 ? true : false;
 
-    if (isValid) {
-      purchaseExecutions(provider, index, executionsQuantity, rifScheduler!);
+    if (isValid && rifScheduler) {
+      purchaseExecutions(
+        provider.id, 
+        index, 
+        executionsQuantity, 
+        rifScheduler,
+        () =>
+          enqueueSnackbar("Purchase confirmed!", {
+            variant: "success",
+          }),
+        (message) =>
+          enqueueSnackbar(message, {
+            variant: "error",
+          })
+      );
     }
   };
 
@@ -176,8 +192,7 @@ const PlanRow: React.FC<{
           <Typography className={classes.heading}>{`#${index + 1}`}</Typography>
         </div>
         <div style={{marginLeft: 12}}>
-          {plan.active && <Chip variant="outlined" size="small" color="primary" label="Active" />}
-          {!plan.active && <Chip variant="outlined" size="small" color="secondary" label="Inactive" />}
+          <StatusLabel plan={plan} />
         </div>
         <div className={classes.columnWindow}>
           <Typography className={classes.secondaryHeading}>
@@ -211,7 +226,7 @@ const PlanRow: React.FC<{
             Select the quantity of executions to purchase
           </Typography>
           <Slider
-            disabled={isLoading || !plan.active}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             value={buyingExecutions}
             aria-labelledby="executionsQuantitySlider"
             step={10}
@@ -262,20 +277,20 @@ const PlanRow: React.FC<{
           }}
         >
           <Button
-            disabled={isLoading || !plan.active}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             size="small"
             onClick={() => setBuyingExecutions(0)}
           >
             Clear
           </Button>
           <Button
-            disabled={isLoading || !plan.active}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             size="small"
             color="primary"
             variant="outlined"
             onClick={handleBuy}
           >
-            Buy
+            {plan.isPurchaseConfirmed ? "Buy" : "Waiting confirmation"}
           </Button>
         </div>
       </AccordionActions>
@@ -291,6 +306,7 @@ const ProviderButton = ({ name, plans, onClick }: { name: string, plans: IPlan[]
       <CardActionArea
         style={{
           height: "100%",
+          width: "100%",
           background: `url(${providerSvg}) no-repeat`,
           backgroundPosition: "right -60px top -20px",
           backgroundSize: "160px 160px",
