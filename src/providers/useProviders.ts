@@ -83,6 +83,12 @@ const useProviders = create<IUseProviders>(
           isLoading: true,
         }));
 
+        const plan = get().providers[providerId].plans[planIndex]
+
+        const approveTransaction = await rifScheduler.approveToken(plan.token, plan.pricePerExecution.mul(executionsQuantity))
+
+        await approveTransaction.wait(environment.REACT_APP_CONFIRMATIONS)
+
         const purchaseTransaction = await rifScheduler.purchasePlan(
           planIndex,
           executionsQuantity
