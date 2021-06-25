@@ -156,7 +156,7 @@ const Schedule = () => {
         rifScheduler,
         account!,
         () =>
-          enqueueSnackbar("Scheduled transaction confirmed!", {
+          enqueueSnackbar("Execution schedule confirmed!", {
             variant: "success",
           }),
         (message) =>

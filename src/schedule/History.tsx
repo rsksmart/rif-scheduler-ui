@@ -18,12 +18,12 @@ import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
-import { useSnackbar } from "notistack";
 import shallow from "zustand/shallow";
 import useRifScheduler from "../providers/useRifScheduler";
 import useConnector from "../connect/useConnector";
 import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
+import ExecutionInfo from "./ExecutionInfo";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -56,9 +56,9 @@ const Item: React.FC<{
   item: IScheduleItem;
   contract?: IContract;
   provider?: IProvider;
-}> = ({ item, contract, provider }) => {
+  onClick?: (executionId: string) => void
+}> = ({ item, contract, provider, onClick }) => {
   const classes = useRowStyles({ color: item.color });
-  const { enqueueSnackbar } = useSnackbar();
   const [updateStatus, isLoading] = useSchedule(
     (state) => [state.updateStatus, state.isLoading],
     shallow
@@ -71,15 +71,8 @@ const Item: React.FC<{
   };
 
   const handleItemClick = () => {
-    if (!navigator?.clipboard) {
-      enqueueSnackbar("Your browser can't access the clipboard", {
-        variant: "error",
-      });
-      return;
-    }
-
-    navigator.clipboard.writeText(item.id as string);
-    enqueueSnackbar("Copied!");
+    if (onClick)
+      onClick(item.id!)
   };
 
   return (
@@ -88,7 +81,7 @@ const Item: React.FC<{
         <ListItemText
           className={classes.part}
           primary={item.title}
-          secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")}`}
+          secondary={`${format(parseISO(item.executeAt), "EEE do, hh:mm aaa")}`}
         />
         <div style={{paddingLeft:16, paddingRight:16}}>
           <StatusLabel state={item.state} />
@@ -126,6 +119,8 @@ interface IGroupBy {
 
 const History = () => {
   const classes = useStyles();
+
+  const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(null)
 
   const connectedToNetwork = useConnector(state => state.network)
 
@@ -165,6 +160,7 @@ const History = () => {
 
   return (
     <>
+      <ExecutionInfo selectedExecutionId={selectedExecutionId} onClose={()=>setSelectedExecutionId(null)} />
       {groupedEntries.length > 0 && (
         <Card>
           <CardHeader
@@ -195,6 +191,7 @@ const History = () => {
                     item={item}
                     contract={contracts[item.contractId]}
                     provider={providers[item.providerId]}
+                    onClick={(value) => setSelectedExecutionId(value)}
                   />
                 ))}
               </List>

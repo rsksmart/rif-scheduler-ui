@@ -35,10 +35,10 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const StatusLabel = ({ state = ExecutionState.NotScheduled }: { state?: ExecutionState }) => {
+const StatusLabel = ({ state = ExecutionState.NotScheduled, isLoading }: { state?: ExecutionState, isLoading?: boolean }) => {
     const classes = useStyles();
 
-    const label = ExecutionStateDescriptions[state]
+    const label = isLoading ? "..." : ExecutionStateDescriptions[state]
 
     return <Chip size="small" color="primary" variant="outlined" label={label} classes={{
         outlinedPrimary: classes[state]

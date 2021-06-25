@@ -12,6 +12,20 @@ export const NetworkName = {
   [ENetwork.RSKTestnet]: "RSK Testnet"
 }
 
+export const NetworkExplorer = {
+  [ENetwork.NotSupported]: null,
+  [ENetwork.RSKMainnet]: "https://explorer.rsk.co/",
+  [ENetwork.RSKTestnet]: "https://explorer.testnet.rsk.co/"
+}
+
+export const getExplorerTxLink = (hash: string, network: ENetwork) => {
+  const explorerUrl = NetworkExplorer[network]
+  if (!explorerUrl)
+    return null
+
+  return new URL(`/tx/${hash}`, explorerUrl).toString()
+}
+
 export enum ExecutionState {
   NotScheduled = 0,
   Scheduled = 1,
