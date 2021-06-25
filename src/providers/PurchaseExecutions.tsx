@@ -176,6 +176,7 @@ const PlanRow: React.FC<{
   isLoading: boolean;
 }> = ({ index, plan, onBuyClick, isLoading }) => {
   const classes = useStyles();
+  const theme = useTheme();
 
   const [buyingExecutions, setBuyingExecutions] = useState(0);
 
@@ -186,7 +187,7 @@ const PlanRow: React.FC<{
   };
 
   return (
-    <Accordion>
+    <Accordion elevation={0} style={{ border: `1px solid ${theme.palette.action.hover}` }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <div>
           <Typography className={classes.heading}>{`#${index + 1}`}</Typography>
