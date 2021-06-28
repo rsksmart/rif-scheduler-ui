@@ -8,7 +8,7 @@ const useRIFScheduler = () => {
     if (!isConnected || isLoading || !signer)
         return null
 
-    const rifScheduler = new RIFScheduler(
+    const rifScheduler = new RifScheduler(
         environment.RIF_SCHEDULER_PROVIDER,
         signer,
         {

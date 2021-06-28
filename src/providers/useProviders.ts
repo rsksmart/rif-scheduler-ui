@@ -63,8 +63,8 @@ const useProviders = create<IUseProviders>(
         const result = { ...provider, plans: [...provider.plans] };
         result.plans[planIndex].remainingExecutions = remainingExecutions
         
-        if (isPurchaseConfirmed) {
-          result.plans[planIndex].isPurchaseConfirmed = true
+        if (isPurchaseConfirmed !== undefined) {
+          result.plans[planIndex].isPurchaseConfirmed = isPurchaseConfirmed
         }
 
         set((state) => ({
