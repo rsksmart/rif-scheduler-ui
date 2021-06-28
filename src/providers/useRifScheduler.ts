@@ -8,8 +8,6 @@ const useRifScheduler = () => {
     if (!isConnected || isLoading || !signer)
         return null
 
-    console.log("environment.REACT_APP_ER677_TOKENS", environment.REACT_APP_ER677_TOKENS)
-
     const rifScheduler = new RifScheduler(
         environment.RIF_SCHEDULER_PROVIDER,
         signer,
