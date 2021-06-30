@@ -12,16 +12,18 @@ import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
 import useSchedule, { IScheduleItem } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import { ExecutionState, ExecutionStateDescriptions } from "../shared/types";
 import useProviders, { IProvider } from "../providers/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
-import { useSnackbar } from "notistack";
-import useConnector from "../connect/useConnector";
 import shallow from "zustand/shallow";
+import useRIFScheduler from "../providers/useRIFScheduler";
+import useConnector from "../connect/useConnector";
+import StatusLabel from "./StatusLabel";
+import { Hidden } from "@material-ui/core";
+import ExecutionInfo from "./ExecutionInfo";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -54,52 +56,50 @@ const Item: React.FC<{
   item: IScheduleItem;
   contract?: IContract;
   provider?: IProvider;
-}> = ({ item, contract, provider }) => {
+  onClick?: (executionId: string) => void
+}> = ({ item, contract, provider, onClick }) => {
   const classes = useRowStyles({ color: item.color });
-  const { enqueueSnackbar } = useSnackbar();
   const [updateStatus, isLoading] = useSchedule(
     (state) => [state.updateStatus, state.isLoading],
     shallow
   );
 
-  const rifScheduler = useConnector((state) => state.rifScheduler);
+  const rifScheduler = useRIFScheduler();
 
   const handleUpdateStatusClick = () => {
     updateStatus(item.id!, rifScheduler!);
   };
 
   const handleItemClick = () => {
-    if (!navigator?.clipboard) {
-      enqueueSnackbar("Your browser can't access the clipboard", {
-        variant: "error",
-      });
-      return;
-    }
-
-    navigator.clipboard.writeText(item.id as string);
-    enqueueSnackbar("Copied!");
+    if (onClick)
+      onClick(item.id!)
   };
 
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
-      <ListItemText
-        primary={item.title}
-        secondary={`${format(parseISO(item.executeAt), "EEE do, HH:mm")} | ${
-          ExecutionStateDescriptions[item.state ?? ExecutionState.NotScheduled]
-        }`}
-        className={classes.part}
-      />
-      <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
-      <ListItemText
-        primary={
-          <span>
-            {contract?.name}&nbsp;&#10140;&nbsp;
-            {hyphensAndCamelCaseToWords(item.contractMethod)}
-          </span>
-        }
-        secondary={`${item.network} | ${provider?.name}`}
-        className={classes.part}
-      />
+      <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>
+        <ListItemText
+          className={classes.part}
+          primary={item.title}
+          secondary={`${format(parseISO(item.executeAt), "EEE do, hh:mm aaa")}`}
+        />
+        <div style={{paddingLeft:16, paddingRight:16}}>
+          <StatusLabel state={item.state} />
+        </div>
+      </div>
+      <Hidden xsDown>
+        <Divider orientation="vertical" style={{ marginRight: 16 }} flexItem />
+        <ListItemText
+          primary={
+            <span>
+              {contract?.name}&nbsp;&#10140;&nbsp;
+              {hyphensAndCamelCaseToWords(item.contractMethod)}
+            </span>
+          }
+          secondary={provider?.name}
+          className={classes.part}
+        />
+      </Hidden>
       <ListItemSecondaryAction>
         <IconButton
           edge="end"
@@ -119,6 +119,10 @@ interface IGroupBy {
 
 const History = () => {
   const classes = useStyles();
+
+  const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(null)
+
+  const connectedToNetwork = useConnector(state => state.network)
 
   const [isFromThisMonth, setIsFromThisMonth] = useState(true);
 
@@ -142,7 +146,8 @@ const History = () => {
       );
     })
     .filter(([id, item]) =>
-      isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true
+      item.network === connectedToNetwork &&
+      (isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true)
     )
     .reduce((prev: any, [id, item]) => {
       const groupId = format(parseISO(item.executeAt), "MMM yyyy");
@@ -155,6 +160,7 @@ const History = () => {
 
   return (
     <>
+      <ExecutionInfo selectedExecutionId={selectedExecutionId} onClose={()=>setSelectedExecutionId(null)} />
       {groupedEntries.length > 0 && (
         <Card>
           <CardHeader
@@ -185,6 +191,7 @@ const History = () => {
                     item={item}
                     contract={contracts[item.contractId]}
                     provider={providers[item.providerId]}
+                    onClick={(value) => setSelectedExecutionId(value)}
                   />
                 ))}
               </List>

@@ -28,7 +28,9 @@ import Slider from "@material-ui/core/Slider";
 import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
-import useConnector from "../connect/useConnector";
+import useRIFScheduler from "./useRIFScheduler";
+import { useSnackbar } from "notistack";
+import StatusLabel from "./StatusLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -74,7 +76,8 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const rifScheduler = useConnector((state) => state.rifScheduler);
+  const { enqueueSnackbar } = useSnackbar();
+  const rifScheduler = useRIFScheduler();
 
   const [purchaseExecutions, isLoading] = useProviders(
     (state) => [state.purchaseExecutions, state.isLoading],
@@ -97,8 +100,21 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
     // TODO: validate purchase fields
     const isValid = executionsQuantity > 0 ? true : false;
 
-    if (isValid) {
-      purchaseExecutions(provider, index, executionsQuantity, rifScheduler!);
+    if (isValid && rifScheduler) {
+      purchaseExecutions(
+        provider.id, 
+        index, 
+        executionsQuantity, 
+        rifScheduler,
+        () =>
+          enqueueSnackbar("Purchase confirmed!", {
+            variant: "success",
+          }),
+        (message) =>
+          enqueueSnackbar(message, {
+            variant: "error",
+          })
+      );
     }
   };
 
@@ -106,7 +122,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
     <>
       <ProviderButton
         name={provider.name}
-        network={provider.network}
+        plans={provider.plans}
         onClick={handleClickOpen}
       />
       <Dialog
@@ -122,19 +138,12 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
         >
           <div>
             <Typography component={"h2"} variant="h6">
-              Plans
+              {`${provider.name}'s plans`}
             </Typography>
           </div>
           <LoadingCircle isLoading={isLoading} />
         </DialogTitle>
         <DialogContent>
-          <Typography
-            variant="body2"
-            color="textSecondary"
-            component="p"
-            style={{ marginBottom: 16 }}
-          >{`${provider.name} / ${provider.network}`}</Typography>
-
           {provider.plans.map((plan, index) => (
             <PlanRow
               key={`plan-row-${provider.id}-${index}`}
@@ -166,6 +175,7 @@ const PlanRow: React.FC<{
   isLoading: boolean;
 }> = ({ index, plan, onBuyClick, isLoading }) => {
   const classes = useStyles();
+  const theme = useTheme();
 
   const [buyingExecutions, setBuyingExecutions] = useState(0);
 
@@ -176,10 +186,13 @@ const PlanRow: React.FC<{
   };
 
   return (
-    <Accordion>
+    <Accordion elevation={0} style={{ border: `1px solid ${theme.palette.action.hover}` }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <div>
           <Typography className={classes.heading}>{`#${index + 1}`}</Typography>
+        </div>
+        <div style={{marginLeft: 12}}>
+          <StatusLabel plan={plan} />
         </div>
         <div className={classes.columnWindow}>
           <Typography className={classes.secondaryHeading}>
@@ -213,7 +226,7 @@ const PlanRow: React.FC<{
             Select the quantity of executions to purchase
           </Typography>
           <Slider
-            disabled={isLoading}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             value={buyingExecutions}
             aria-labelledby="executionsQuantitySlider"
             step={10}
@@ -264,20 +277,20 @@ const PlanRow: React.FC<{
           }}
         >
           <Button
-            disabled={isLoading}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             size="small"
             onClick={() => setBuyingExecutions(0)}
           >
             Clear
           </Button>
           <Button
-            disabled={isLoading}
+            disabled={isLoading || !plan.isPurchaseConfirmed || !plan.active}
             size="small"
             color="primary"
             variant="outlined"
             onClick={handleBuy}
           >
-            Buy
+            {plan.isPurchaseConfirmed ? "Buy" : "Waiting confirmation"}
           </Button>
         </div>
       </AccordionActions>
@@ -285,12 +298,15 @@ const PlanRow: React.FC<{
   );
 };
 
-const ProviderButton = ({ name, network, onClick }: any) => {
+const ProviderButton = ({ name, plans, onClick }: { name: string, plans: IPlan[], onClick: any }) => {
+  const plansWithRemainingExecutions = plans.filter(x=> x.remainingExecutions && x.remainingExecutions.gt(0))
+
   return (
     <Card>
       <CardActionArea
         style={{
           height: "100%",
+          width: "100%",
           background: `url(${providerSvg}) no-repeat`,
           backgroundPosition: "right -60px top -20px",
           backgroundSize: "160px 160px",
@@ -301,9 +317,11 @@ const ProviderButton = ({ name, network, onClick }: any) => {
           <Typography gutterBottom variant="h5" component="h2">
             {name}
           </Typography>
-          <Typography variant="body2" color="textSecondary" component="span">
-            {network}
-          </Typography>
+          {plansWithRemainingExecutions.map((plan, index) => (
+            <Typography key={`plan-remaining-${plan.window.toString()}`} variant="body2" color="textSecondary" component="div">
+              {`Window ${fromBigNumberToHms(plan.window)}: ${plan.remainingExecutions} executions left`}
+            </Typography>
+          ))}
         </CardContent>
       </CardActionArea>
     </Card>

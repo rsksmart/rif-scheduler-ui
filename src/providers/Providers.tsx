@@ -8,6 +8,8 @@ import useProviders from "./useProviders";
 import shallow from "zustand/shallow";
 import Loading from "../shared/Loading";
 import PurchaseExecutions from "./PurchaseExecutions";
+import useConnector from "../connect/useConnector";
+import NetworkLabel from "../connect/NetworkLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -29,10 +31,15 @@ const Providers = () => {
     shallow
   );
 
+  const connectedToNetwork = useConnector(state => state.network)
+
+  const networkProviders = Object.entries(providers)
+    .filter(([id, provider])=> provider.network === connectedToNetwork)
+
   return (
     <Layout>
       <Card className={classes.root} variant="outlined">
-        <CardHeader title="Providers" />
+        <CardHeader action={<NetworkLabel />} title="Providers" />
         <CardContent>
           <Typography variant="body2" color="textSecondary" component="p">
             Here you can see the currently available service providers and
@@ -54,7 +61,7 @@ const Providers = () => {
           justifyContent: "space-between",
         }}
       >
-        {Object.entries(providers).map(([id, provider]) => (
+        {networkProviders.map(([id, provider]) => (
           <PurchaseExecutions key={`provider-list-${id}`} provider={provider} />
         ))}
       </div>

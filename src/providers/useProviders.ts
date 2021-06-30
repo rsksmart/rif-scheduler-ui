@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
-import { RifScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { RIFScheduler } from "@rsksmart/rif-scheduler-sdk/dist";
 import { IPlanResponse } from "@rsksmart/rif-scheduler-sdk/dist/types";
 import create from "zustand";
 import { persist } from "zustand/middleware";
@@ -12,6 +12,7 @@ export interface IPlan extends IPlanResponse {
   remainingExecutions: BigNumber | null;
   symbol: string;
   decimals: number;
+  isPurchaseConfirmed: boolean;
 }
 
 export interface IProvider {
@@ -27,12 +28,20 @@ export interface IUseProviders {
     [id: string]: IProvider;
   };
   isLoading: boolean;
-  load: (rifScheduler: RifScheduler) => Promise<void>;
+  load: (rifScheduler: RIFScheduler) => Promise<void>;
   purchaseExecutions: (
-    provider: IProvider,
+    providerId: string,
     planIndex: number,
     executionsAmount: number,
-    rifScheduler: RifScheduler
+    rifScheduler: RIFScheduler,
+    onConfirmed: () => void,
+    onFailed: (message: string) => void
+  ) => Promise<void>;
+  updateRemainingExecutions: (
+    providerId: string,
+    planIndex: number,
+    rifScheduler: RIFScheduler,
+    isPurchaseConfirmed?: boolean,
   ) => Promise<void>;
 }
 
@@ -41,52 +50,81 @@ const useProviders = create<IUseProviders>(
     (set, get) => ({
       providers: {},
       isLoading: false,
+      updateRemainingExecutions: async (
+        providerId: string,
+        planIndex: number,
+        rifScheduler: RIFScheduler,
+        isPurchaseConfirmed?: boolean,
+      ) => {
+        const remainingExecutions = await rifScheduler.remainingExecutions(planIndex)
+
+        const provider = get().providers[providerId]
+
+        const result = { ...provider, plans: [...provider.plans] };
+        result.plans[planIndex].remainingExecutions = remainingExecutions
+        
+        if (isPurchaseConfirmed !== undefined) {
+          result.plans[planIndex].isPurchaseConfirmed = isPurchaseConfirmed
+        }
+
+        set((state) => ({
+          providers: { ...state.providers, [result.id]: result }
+        }));
+      },
       purchaseExecutions: async (
-        provider: IProvider,
+        providerId: string,
         planIndex: number,
         executionsQuantity: number,
-        rifScheduler: RifScheduler
+        rifScheduler: RIFScheduler,
+        onConfirmed: () => void,
+        onFailed: (message: string) => void
       ) => {
-        set(() => ({
+        set((state) => ({
           isLoading: true,
         }));
 
-        // const plan = provider.plans[planIndex];
+        // const plan = get().providers[providerId].plans[planIndex]
 
-        // const totalAmount = plan.pricePerExecution.mul(executionsQuantity)
+        // const approveTransaction = await rifScheduler.approveToken(plan.token, plan.pricePerExecution.mul(executionsQuantity))
+
+        // await approveTransaction.wait(environment.REACT_APP_CONFIRMATIONS)
 
         const purchaseTransaction = await rifScheduler.purchasePlan(
           planIndex,
           executionsQuantity
         );
 
-        await purchaseTransaction.wait(environment.REACT_APP_CONFIRMATIONS);
+        get().updateRemainingExecutions(providerId, planIndex, rifScheduler, false)
 
-        const result = { ...provider, plans: [...provider.plans] };
-        result.plans[planIndex].remainingExecutions =
-          await rifScheduler.remainingExecutions(planIndex);
+        purchaseTransaction
+          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .then(async (receipt) => {
+            onConfirmed()
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => get().updateRemainingExecutions(providerId, planIndex, rifScheduler, true));
 
         set((state) => ({
-          providers: { ...state.providers, [result.id]: result },
           isLoading: false,
         }));
       },
-      load: async (rifScheduler: RifScheduler) => {
+      load: async (rifScheduler: RIFScheduler) => {
         set(() => ({
           isLoading: true,
         }));
 
-        const contractAddress = environment.RIF_ONE_SHOOT_SCHEDULER_PROVIDER;
+        const contractAddress = environment.RIF_SCHEDULER_PROVIDER;
 
         const provider: IProvider = {
-          id: `${ENetwork.Testnet}-${contractAddress}`,
+          id: `${ENetwork.RSKTestnet}-${contractAddress}`,
           name: "Rif Provider",
-          network: ENetwork.Testnet,
+          network: ENetwork.RSKTestnet,
           address: contractAddress,
           plans: [],
         };
 
-        const plansCount = await rifScheduler.getPlansCount();
+        const plansCount = await rifScheduler.getPlansCount()
+
         for (let index = 0; plansCount.gt(index); index++) {
           const plan = await rifScheduler.getPlan(index);
 
@@ -111,6 +149,7 @@ const useProviders = create<IUseProviders>(
             symbol: tokenSymbol,
             decimals: tokenDecimals,
             remainingExecutions,
+            isPurchaseConfirmed: true
           });
         }
 

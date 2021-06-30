@@ -1,7 +1,4 @@
-import RLogin, { RLoginButton } from "@rsksmart/rlogin";
-import WalletConnectProvider from "@walletconnect/web3-provider";
-import { providers } from "ethers";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import useConnector from "./useConnector";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import Layout from "../shared/Layout";
@@ -11,22 +8,9 @@ import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import Loading from "../shared/Loading";
 import shallow from "zustand/shallow";
-
-const rLogin = new RLogin({
-  cachedProvider: false, // change to true to cache user's wallet choice
-  providerOptions: {
-    // read more about providers setup in https://github.com/web3Modal/web3modal/
-    walletconnect: {
-      package: WalletConnectProvider, // setup wallet connect for mobile wallet support
-      options: {
-        rpc: {
-          31: "https://public-node.testnet.rsk.co", // use RSK public nodes to connect to the testnet
-        },
-      },
-    },
-  },
-  supportedChains: [31], // enable rsk testnet network
-});
+import { isRLoginConnected, rLogin } from "./rLogin";
+import Button from '@material-ui/core/Button';
+import lockSvg from "../assets/illustrations/lock.svg";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -43,38 +27,59 @@ const useStyles = makeStyles((theme: Theme) =>
 const Connect = () => {
   const classes = useStyles();
 
-  const [setConnection, isLoading] = useConnector(
-    (state) => [state.setConnection, state.isLoading],
+  const [connect, disconnect, isLoading] = useConnector(
+    (state) => [state.connect, state.disconnect, state.isLoading],
     shallow
   );
 
-  const connect = useCallback(async () => {
-    const { provider } = await rLogin.connect();
+  const handleConnect = useCallback(async () => {
+    try {
+      const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      const timeout = (p: Promise<any>, ms: number) => Promise.race([p, wait(ms).then(() => {
+          throw new Error("Timeout after " + ms + " ms");
+      })]);
 
-    const [account] = await provider.request({ method: "eth_accounts" });
-
-    if (account) {
-      setConnection(account, new providers.Web3Provider(provider));
+      const { provider, disconnect } = await timeout(rLogin.connect(), 3000);
+      
+      connect(provider, disconnect);
+    } catch (error) {
+      console.error("handleConnect error:", error)
+      disconnect()
     }
-  }, [setConnection]);
+  }, [connect, disconnect]);
+
+  useEffect(() => {
+    if (isRLoginConnected()) {
+      handleConnect()
+    }
+  }, [handleConnect])
 
   return (
     <Layout hideMenu>
       {!isLoading && (
-        <Card className={classes.root} variant="outlined">
-          <CardHeader title="Connect" />
+        <Card className={classes.root} variant="outlined" style={{
+          height: "100%",
+          backgroundColor: "#333",
+          backgroundImage: `url(${lockSvg})`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right -60px top -20px",
+          backgroundSize: "160px 160px",
+        }}>
+          <CardHeader title="Wallet connection" />
           <CardContent>
-            <Typography variant="body2" color="textSecondary" component="p">
-              In order to use this app you need to connect it with your wallet.
+            <Typography variant="subtitle1" color="textSecondary" component="p">
+              Let's connect your wallet to start scheduling executions.
             </Typography>
             <div
               style={{
                 display: "flex",
-                justifyContent: "center",
+                // justifyContent: "center",
                 marginTop: 24,
               }}
             >
-              <RLoginButton onClick={connect}>Connect wallet</RLoginButton>
+              <Button variant="contained" color="primary" onClick={handleConnect}>
+                Connect now!
+              </Button>
             </div>
           </CardContent>
         </Card>
