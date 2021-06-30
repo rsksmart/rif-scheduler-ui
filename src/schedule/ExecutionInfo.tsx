@@ -28,7 +28,7 @@ import useConnector from "../connect/useConnector";
 import Link from "@material-ui/core/Link";
 import LinkIcon from '@material-ui/icons/Launch';
 import RefreshIcon from '@material-ui/icons/Refresh';
-import useRifScheduler from "../providers/useRifScheduler";
+import useRifScheduler from "../providers/useRIFScheduler";
 import shallow from "zustand/shallow";
 import { fromBigNumberToHms } from "../shared/formatters";
 
@@ -41,8 +41,8 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
     
     const open = selectedExecutionId ? true : false
     
-    const [scheduleItems, updateStatus, isLoading] = 
-        useSchedule((state) => [state.scheduleItems, state.updateStatus, state.isLoading], shallow);
+    const [scheduleItems, updateStatus, updateResult, isLoading] = 
+        useSchedule((state) => [state.scheduleItems, state.updateStatus, state.updateResult, state.isLoading], shallow);
     const providers = useProviders((state) => state.providers);
     const contracts = useContracts((state) => state.contracts);  
     
@@ -53,6 +53,14 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
     const connectedToNetwork = useConnector(state => state.network)
 
     if (!selectedExecutionId) return null
+
+    const execution = scheduleItems[selectedExecutionId]
+    const provider = providers[execution.providerId]
+    const contract = contracts[execution.contractId]
+    const plan = provider.plans[execution.providerPlanIndex]
+
+    const explorerAddressUrl = execution.transactionId && connectedToNetwork &&
+        getExplorerTxLink(execution.transactionId, connectedToNetwork)
 
     const handleCopy = (textToCopy: string | undefined | null) => () => {
         if (!textToCopy) {
@@ -76,13 +84,11 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
         updateStatus(selectedExecutionId, rifScheduler);
     };
 
-    const execution = scheduleItems[selectedExecutionId]
-    const provider = providers[execution.providerId]
-    const contract = contracts[execution.contractId]
-    const plan = provider.plans[execution.providerPlanIndex]
+    const handleUpdateResultClick = () => {
+      if (!rifScheduler) return;
 
-    const explorerAddressUrl = execution.transactionId && connectedToNetwork &&
-        getExplorerTxLink(execution.transactionId, connectedToNetwork)
+      updateResult(execution, contract, plan, rifScheduler);
+  };
 
     return (
       <Dialog
@@ -171,6 +177,27 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                             <RegularTableCell align="right">
                                 {contract.name}&nbsp;&#10140;&nbsp;
                                 {hyphensAndCamelCaseToWords(execution.contractMethod)}
+                            </RegularTableCell>
+                        </StyledTableRow>
+                        <StyledTableRow>
+                            <StrongTableCell component="th" scope="row">
+                                Result
+                            </StrongTableCell>
+                            <RegularTableCell align="right" style={rowStyles}>
+                                <IconButton 
+                                    aria-label="refresh result" 
+                                    size="small" 
+                                    onClick={
+                                      execution.result ? 
+                                        handleCopy(execution.result) :
+                                        handleUpdateResultClick
+                                    }
+                                    disabled={isLoading}
+                                >
+                                  {execution.result && <CopyIcon fontSize="inherit" />}
+                                  {!execution.result && <RefreshIcon fontSize="inherit" />}
+                                </IconButton>
+                                <span>{execution.result}</span>
                             </RegularTableCell>
                         </StyledTableRow>
                     </TableBody>

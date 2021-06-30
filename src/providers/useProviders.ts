@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
-import { RifScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { RIFScheduler } from "@rsksmart/rif-scheduler-sdk/dist";
 import { IPlanResponse } from "@rsksmart/rif-scheduler-sdk/dist/types";
 import create from "zustand";
 import { persist } from "zustand/middleware";
@@ -28,19 +28,19 @@ export interface IUseProviders {
     [id: string]: IProvider;
   };
   isLoading: boolean;
-  load: (rifScheduler: RifScheduler) => Promise<void>;
+  load: (rifScheduler: RIFScheduler) => Promise<void>;
   purchaseExecutions: (
     providerId: string,
     planIndex: number,
     executionsAmount: number,
-    rifScheduler: RifScheduler,
+    rifScheduler: RIFScheduler,
     onConfirmed: () => void,
     onFailed: (message: string) => void
   ) => Promise<void>;
   updateRemainingExecutions: (
     providerId: string,
     planIndex: number,
-    rifScheduler: RifScheduler,
+    rifScheduler: RIFScheduler,
     isPurchaseConfirmed?: boolean,
   ) => Promise<void>;
 }
@@ -53,7 +53,7 @@ const useProviders = create<IUseProviders>(
       updateRemainingExecutions: async (
         providerId: string,
         planIndex: number,
-        rifScheduler: RifScheduler,
+        rifScheduler: RIFScheduler,
         isPurchaseConfirmed?: boolean,
       ) => {
         const remainingExecutions = await rifScheduler.remainingExecutions(planIndex)
@@ -75,7 +75,7 @@ const useProviders = create<IUseProviders>(
         providerId: string,
         planIndex: number,
         executionsQuantity: number,
-        rifScheduler: RifScheduler,
+        rifScheduler: RIFScheduler,
         onConfirmed: () => void,
         onFailed: (message: string) => void
       ) => {
@@ -108,7 +108,7 @@ const useProviders = create<IUseProviders>(
           isLoading: false,
         }));
       },
-      load: async (rifScheduler: RifScheduler) => {
+      load: async (rifScheduler: RIFScheduler) => {
         set(() => ({
           isLoading: true,
         }));
@@ -123,7 +123,8 @@ const useProviders = create<IUseProviders>(
           plans: [],
         };
 
-        const plansCount = await rifScheduler.getPlansCount();
+        const plansCount = await rifScheduler.getPlansCount()
+
         for (let index = 0; plansCount.gt(index); index++) {
           const plan = await rifScheduler.getPlan(index);
 

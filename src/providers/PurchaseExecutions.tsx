@@ -28,7 +28,7 @@ import Slider from "@material-ui/core/Slider";
 import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
-import useRifScheduler from "./useRifScheduler";
+import useRIFScheduler from "./useRIFScheduler";
 import { useSnackbar } from "notistack";
 import StatusLabel from "./StatusLabel";
 
@@ -77,8 +77,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { enqueueSnackbar } = useSnackbar();
-
-  const rifScheduler = useRifScheduler();
+  const rifScheduler = useRIFScheduler();
 
   const [purchaseExecutions, isLoading] = useProviders(
     (state) => [state.purchaseExecutions, state.isLoading],

@@ -1,8 +1,8 @@
-import { RifScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
 import useConnector from "../connect/useConnector";
 import environment from "../shared/environment";
 
-const useRifScheduler = () => {
+const useRIFScheduler = () => {
     const [isConnected, isLoading, signer] = useConnector(state => [state.isConnected, state.isLoading, state.signer])
 
     if (!isConnected || isLoading || !signer)
@@ -19,4 +19,4 @@ const useRifScheduler = () => {
     return rifScheduler
 }
 
-export default useRifScheduler
+export default useRIFScheduler

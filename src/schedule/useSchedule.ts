@@ -1,10 +1,12 @@
-import { executionFactory, RifScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { executionFactory, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
 import { parseISO } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import { IContract } from "../contracts/useContracts";
+import { IPlan } from "../providers/useProviders";
 import environment from "../shared/environment";
+import getExecutionResult from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
 import { ENetwork, ExecutionState } from "../shared/types";
 
@@ -21,6 +23,7 @@ export interface IScheduleItem {
   contractFields: string[];
   state?: ExecutionState;
   color?: string;
+  result?: string;
 }
 
 export interface IUseSchedule {
@@ -30,12 +33,18 @@ export interface IUseSchedule {
   };
   updateStatus: (
     executionId: string,
+    rifScheduler: RIFScheduler
+  ) => Promise<void>;
+  updateResult: (
+    execution: IScheduleItem, 
+    contract: IContract,
+    plan: IPlan, 
     rifScheduler: RifScheduler
   ) => Promise<void>;
   scheduleAndSave: (
     scheduleItem: IScheduleItem,
     contract: IContract,
-    rifScheduler: RifScheduler,
+    rifScheduler: RIFScheduler,
     myAccountAddress: string,
     onConfirmed: () => void,
     onFailed: (message: string) => void
@@ -47,7 +56,7 @@ const useSchedule = create<IUseSchedule>(
     (set, get) => ({
       isLoading: false,
       scheduleItems: {},
-      updateStatus: async (executionId: string, rifScheduler: RifScheduler) => {
+      updateStatus: async (executionId: string, rifScheduler: RIFScheduler) => {
         set(() => ({
           isLoading: true,
         }));
@@ -65,10 +74,41 @@ const useSchedule = create<IUseSchedule>(
           isLoading: false,
         }));
       },
+      updateResult: async (execution: IScheduleItem, contract: IContract, plan: IPlan, rifScheduler: RifScheduler) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const result = await getExecutionResult(
+          environment.RIF_SCHEDULER_PROVIDER, 
+          rifScheduler.provider, 
+          plan.window.toNumber(), 
+          execution
+        )
+
+        const contractInterface = new utils.Interface(
+          contract.ABI
+        )
+
+        const parsedResult = result && execution.state === ExecutionState.ExecutionSuccessful ? 
+          contractInterface.decodeFunctionResult(execution.contractMethod, result.result).join(", ") : 
+          result?.result
+
+        set((state) => ({
+          scheduleItems: {
+            ...state.scheduleItems,
+            [execution.id!]: {
+              ...state.scheduleItems[execution.id!],
+              result: parsedResult ? parsedResult : "---",
+            },
+          },
+          isLoading: false,
+        }));
+      },
       scheduleAndSave: async (
         scheduleItem: IScheduleItem,
         contract: IContract,
-        rifScheduler: RifScheduler,
+        rifScheduler: RIFScheduler,
         myAccountAddress: string,
         onConfirmed: () => void,
         onFailed: (message: string) => void
