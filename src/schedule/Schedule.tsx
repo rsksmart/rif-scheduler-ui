@@ -31,7 +31,7 @@ import ButtonWithLoading from "../shared/ButtonWIthLoading";
 import { fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
-import useRIFScheduler from "../providers/useRIFScheduler";
+import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
 import NetworkLabel from "../connect/NetworkLabel"
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -59,7 +59,7 @@ const Schedule = () => {
   const providers = useProviders((state) => state.providers);
   const contracts = useContracts((state) => state.contracts);
   const [account, connectedToNetwork] = useConnector(state => [state.account, state.network], shallow);
-  const rifScheduler = useRIFScheduler();
+  const rifScheduler = useRIFSchedulerProvider();
 
   const { enqueueSnackbar } = useSnackbar();
 

@@ -39,7 +39,7 @@ export interface IUseSchedule {
     execution: IScheduleItem, 
     contract: IContract,
     plan: IPlan, 
-    rifScheduler: RifScheduler
+    rifScheduler: RIFScheduler
   ) => Promise<void>;
   scheduleAndSave: (
     scheduleItem: IScheduleItem,
@@ -74,7 +74,7 @@ const useSchedule = create<IUseSchedule>(
           isLoading: false,
         }));
       },
-      updateResult: async (execution: IScheduleItem, contract: IContract, plan: IPlan, rifScheduler: RifScheduler) => {
+      updateResult: async (execution: IScheduleItem, contract: IContract, plan: IPlan, rifScheduler: RIFScheduler) => {
         set(() => ({
           isLoading: true,
         }));
@@ -127,21 +127,10 @@ const useSchedule = create<IUseSchedule>(
         // TODO: add an input form for this value
         const valueToTransfer = BigNumber.from(0);
 
-        let gas = await rifScheduler.estimateGas(
-          contract.address,
-          encodedFunctionCall
-        );
-
-        if (!gas) {
-          onFailed("Failed estimating the gas.");
-          gas = BigNumber.from("1000000000000000000"); // 1 rBTC
-        }
-
         const execution = executionFactory(
           scheduleItem.providerPlanIndex,
           contract.address,
           encodedFunctionCall,
-          gas,
           parseISO(scheduleItem.executeAt),
           valueToTransfer,
           myAccountAddress

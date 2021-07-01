@@ -16,13 +16,13 @@ import useProviders from "./providers/useProviders";
 import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
-import useRIFScheduler from "./providers/useRIFScheduler";
+import useRIFSchedulerProvider from "./providers/useRIFSchedulerProvider";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 
 function App() {
   const isConnected = useConnector(state => state.isConnected);
 
-  const rifScheduler = useRIFScheduler()
+  const rifScheduler = useRIFSchedulerProvider()
 
   const loadProviders = useProviders((state) => state.load);
 
