@@ -25,10 +25,10 @@ import AccordionActions from "@material-ui/core/AccordionActions";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import Divider from "@material-ui/core/Divider";
 import Slider from "@material-ui/core/Slider";
-import { fromBigNumberToHms, formatPrice } from "../shared/formatters";
+import { fromBigNumberToHms, formatBigNumber } from "../shared/formatters";
 import shallow from "zustand/shallow";
 import LoadingCircle from "../shared/LoadingCircle";
-import useRIFScheduler from "./useRIFScheduler";
+import useRIFSchedulerProvider from "./useRIFSchedulerProvider";
 import { useSnackbar } from "notistack";
 import StatusLabel from "./StatusLabel";
 
@@ -77,7 +77,7 @@ const PurchaseExecutions = ({ provider }: { provider: IProvider }) => {
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { enqueueSnackbar } = useSnackbar();
-  const rifScheduler = useRIFScheduler();
+  const rifScheduler = useRIFSchedulerProvider();
 
   const [purchaseExecutions, isLoading] = useProviders(
     (state) => [state.purchaseExecutions, state.isLoading],
@@ -199,6 +199,11 @@ const PlanRow: React.FC<{
             {`Window: ${fromBigNumberToHms(plan.window)}`}
           </Typography>
         </div>
+        <div className={classes.columnWindow}>
+          <Typography className={classes.secondaryHeading}>
+            {`Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}
+          </Typography>
+        </div>
       </AccordionSummary>
       <AccordionDetails className={classes.details}>
         <div className={classes.column}>
@@ -209,7 +214,7 @@ const PlanRow: React.FC<{
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <PriceIcon />
             <Typography variant="h5">
-              {formatPrice(plan.pricePerExecution, plan.decimals)}
+              {formatBigNumber(plan.pricePerExecution, plan.decimals)}
             </Typography>
           </div>
         </div>
@@ -260,10 +265,10 @@ const PlanRow: React.FC<{
         style={{ justifyContent: "space-between", flexWrap: "wrap" }}
       >
         <Typography variant="caption">
-          {`Total: ${buyingExecutions} x ${formatPrice(
+          {`Total: ${buyingExecutions} x ${formatBigNumber(
             plan.pricePerExecution,
             plan.decimals
-          )} ${plan.symbol} = ${formatPrice(
+          )} ${plan.symbol} = ${formatBigNumber(
             plan.pricePerExecution.mul(buyingExecutions),
             plan.decimals
           )} ${plan.symbol}`}

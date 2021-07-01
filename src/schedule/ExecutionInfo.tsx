@@ -28,7 +28,7 @@ import useConnector from "../connect/useConnector";
 import Link from "@material-ui/core/Link";
 import LinkIcon from '@material-ui/icons/Launch';
 import RefreshIcon from '@material-ui/icons/Refresh';
-import useRifScheduler from "../providers/useRIFScheduler";
+import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
 import shallow from "zustand/shallow";
 import { fromBigNumberToHms } from "../shared/formatters";
 
@@ -46,7 +46,7 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
     const providers = useProviders((state) => state.providers);
     const contracts = useContracts((state) => state.contracts);  
     
-    const rifScheduler = useRifScheduler();
+    const rifScheduler = useRIFSchedulerProvider();
 
     const { enqueueSnackbar } = useSnackbar();
 

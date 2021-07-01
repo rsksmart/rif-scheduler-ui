@@ -45,7 +45,7 @@ export const fromBigNumberToHms = (secondsInput: EthBigNumber) => {
   return result.trim();
 };
 
-export const formatPrice = (price: EthBigNumber, decimals: number) => {
+export const formatBigNumber = (price: EthBigNumber, decimals: number) => {
   const bigNumber = new BigNumber(price.toString()).div(10 ** decimals);
 
   if (bigNumber.decimalPlaces() > 0) {
