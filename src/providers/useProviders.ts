@@ -139,7 +139,7 @@ const useProviders = create<IUseProviders>(
               "function symbol() view returns (string)",
               "function decimals() view returns (uint8)",
             ],
-            rifScheduler.provider
+            rifScheduler.provider as any
           );
           const tokenSymbol = await tokenContract.symbol();
           const tokenDecimals = await tokenContract.decimals();
