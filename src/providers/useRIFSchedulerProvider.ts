@@ -10,7 +10,7 @@ const useRIFSchedulerProvider = () => {
 
     const rifScheduler = new RIFScheduler(
         environment.RIF_SCHEDULER_PROVIDER,
-        signer,
+        signer as any,
         {
             supportedER677Tokens: environment.REACT_APP_ER677_TOKENS,
         }

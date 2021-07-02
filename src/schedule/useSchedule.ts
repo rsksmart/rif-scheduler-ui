@@ -81,7 +81,7 @@ const useSchedule = create<IUseSchedule>(
 
         const result = await getExecutionResult(
           environment.RIF_SCHEDULER_PROVIDER, 
-          rifScheduler.provider, 
+          rifScheduler.provider as any, 
           plan.window.toNumber(), 
           execution
         )
