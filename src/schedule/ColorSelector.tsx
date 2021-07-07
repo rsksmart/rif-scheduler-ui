@@ -8,7 +8,7 @@ const RedRadio = withStyles({
     padding: 7,
     color: red[400],
     "&$checked": {
-      color: red[600],
+      color: red[400],
     },
   },
   checked: {},
@@ -19,7 +19,7 @@ const TealRadio = withStyles({
     padding: 7,
     color: teal[400],
     "&$checked": {
-      color: teal[600],
+      color: teal[400],
     },
   },
   checked: {},
@@ -28,9 +28,9 @@ const TealRadio = withStyles({
 const YellowRadio = withStyles({
   root: {
     padding: 7,
-    color: yellow[400],
+    color: yellow[700],
     "&$checked": {
-      color: yellow[600],
+      color: yellow[700],
     },
   },
   checked: {},
@@ -41,7 +41,7 @@ const LightBlueRadio = withStyles({
     padding: 7,
     color: lightBlue[400],
     "&$checked": {
-      color: lightBlue[600],
+      color: lightBlue[400],
     },
   },
   checked: {},
@@ -50,9 +50,9 @@ const LightBlueRadio = withStyles({
 const OrangeRadio = withStyles({
   root: {
     padding: 7,
-    color: orange[400],
+    color: orange[700],
     "&$checked": {
-      color: orange[600],
+      color: orange[700],
     },
   },
   checked: {},

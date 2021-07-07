@@ -13,7 +13,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import useContracts from "../contracts/useContracts";
-import useProviders from "../providers/useProviders";
+import useProviders from "../store/useProviders";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 import StatusLabel from "./StatusLabel";
@@ -28,7 +28,7 @@ import useConnector from "../connect/useConnector";
 import Link from "@material-ui/core/Link";
 import LinkIcon from '@material-ui/icons/Launch';
 import RefreshIcon from '@material-ui/icons/Refresh';
-import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
+import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import shallow from "zustand/shallow";
 import { fromBigNumberToHms } from "../shared/formatters";
 

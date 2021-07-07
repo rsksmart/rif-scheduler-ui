@@ -66,7 +66,7 @@ const StoragePersistAlert = () => {
             <Button
               onClick={handleEnable}
               color="primary"
-              variant="outlined"
+              variant="contained"
               disabled={enableClicked}
             >
               Enable

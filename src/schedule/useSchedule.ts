@@ -4,7 +4,7 @@ import { BigNumber, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import { IContract } from "../contracts/useContracts";
-import { IPlan } from "../providers/useProviders";
+import { IPlan } from "../store/useProviders";
 import environment from "../shared/environment";
 import getExecutionResult from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";

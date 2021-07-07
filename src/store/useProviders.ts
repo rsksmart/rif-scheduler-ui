@@ -3,9 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { RIFScheduler } from "@rsksmart/rif-scheduler-sdk/dist";
 import { IPlanResponse } from "@rsksmart/rif-scheduler-sdk/dist/types";
 import create from "zustand";
-import { persist } from "zustand/middleware";
 import environment from "../shared/environment";
-import localbasePersist from "../shared/localbasePersist";
 import { ENetwork } from "../shared/types";
 
 export interface IPlan extends IPlanResponse {
@@ -13,6 +11,7 @@ export interface IPlan extends IPlanResponse {
   symbol: string;
   decimals: number;
   isPurchaseConfirmed: boolean;
+  index: number;
 }
 
 export interface IProvider {
@@ -46,7 +45,6 @@ export interface IUseProviders {
 }
 
 const useProviders = create<IUseProviders>(
-  persist(
     (set, get) => ({
       providers: {},
       isLoading: false,
@@ -149,7 +147,8 @@ const useProviders = create<IUseProviders>(
             symbol: tokenSymbol,
             decimals: tokenDecimals,
             remainingExecutions,
-            isPurchaseConfirmed: true
+            isPurchaseConfirmed: true,
+            index
           });
         }
 
@@ -158,9 +157,7 @@ const useProviders = create<IUseProviders>(
           isLoading: false,
         }));
       },
-    }),
-    localbasePersist("providers", ["isLoading"])
-  )
+    })
 );
 
 export default useProviders;

@@ -32,7 +32,7 @@ const ButtonWithLoading = ({ isLoading, onClick, label }: any) => {
       <div className={classes.wrapper}>
         <Button
           color="primary"
-          variant="outlined"
+          variant="contained"
           disabled={isLoading}
           onClick={onClick}
         >

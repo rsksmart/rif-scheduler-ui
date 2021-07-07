@@ -58,7 +58,7 @@ const Account = () => {
 
   return (
     <Layout>
-      <Card className={classes.root} variant="outlined">
+      <Card className={classes.root}>
         <CardHeader title="Account" />
         <CardContent style={{ padding: 0 }}>
           <List className={classes.root}>

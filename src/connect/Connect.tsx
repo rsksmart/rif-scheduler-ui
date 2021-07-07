@@ -57,9 +57,8 @@ const Connect = () => {
   return (
     <Layout hideMenu>
       {!isLoading && (
-        <Card className={classes.root} variant="outlined" style={{
+        <Card className={classes.root} style={{
           height: "100%",
-          backgroundColor: "#333",
           backgroundImage: `url(${lockSvg})`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "right -60px top -20px",

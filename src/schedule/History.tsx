@@ -12,14 +12,14 @@ import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
 import useSchedule, { IScheduleItem } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import useProviders, { IProvider } from "../providers/useProviders";
+import useProviders, { IProvider } from "../store/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
-import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
+import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import useConnector from "../connect/useConnector";
 import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
@@ -44,7 +44,7 @@ const useRowStyles = makeStyles((theme: Theme) =>
       flexDirection: "column",
       flex: 1,
     },
-    row: ({ color = "#fff" }: any) => ({
+    row: ({ color = "#333" }: any) => ({
       borderLeft: `${color} 4px solid`,
       borderBottom: `${color} 1px solid`,
       borderRadius: 15,
@@ -162,7 +162,7 @@ const History = () => {
     <>
       <ExecutionInfo selectedExecutionId={selectedExecutionId} onClose={()=>setSelectedExecutionId(null)} />
       {groupedEntries.length > 0 && (
-        <Card>
+        <Card style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
           <CardHeader
             title={isFromThisMonth ? "Current and pending" : "History"}
             action={
