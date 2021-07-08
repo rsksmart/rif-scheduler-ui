@@ -86,7 +86,7 @@ const Item: React.FC<{
           secondary={`${format(parseISO(item.executeAt), "EEE do, hh:mm aaa")}`}
         />
         <div style={{paddingLeft:16, paddingRight:16}}>
-          <StatusLabel state={item.state} />
+          <StatusLabel execution={item} />
         </div>
       </div>
       <Hidden xsDown>
@@ -106,7 +106,7 @@ const Item: React.FC<{
         <IconButton
           edge="end"
           onClick={handleUpdateStatusClick}
-          disabled={isLoading}
+          disabled={isLoading || !item.isConfirmed}
         >
           <RefreshIcon style={{ color: item.color }} />
         </IconButton>

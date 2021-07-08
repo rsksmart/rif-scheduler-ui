@@ -19,7 +19,7 @@ import Button from "@material-ui/core/Button";
 import StatusLabel from "./StatusLabel";
 import { format, parseISO } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
-import shortAddress from "../shared/shortAddress";
+import shortText from "../shared/shortText";
 import IconButton from '@material-ui/core/IconButton';
 import CopyIcon from '@material-ui/icons/FileCopy';
 import { useSnackbar } from "notistack";
@@ -38,19 +38,24 @@ const rowStyles = {display:"flex", alignItems:"center", gap: "5px"}
 
 const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: string | null, onClose: () => void }) => {
     const theme = useTheme();
-    
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
     
     const open = selectedExecutionId ? true : false
+
+    const { enqueueSnackbar } = useSnackbar();
     
-    const [scheduleItems, updateStatus, updateResult, isLoading] = 
-        useSchedule((state) => [state.scheduleItems, state.updateStatus, state.updateResult, state.isLoading], shallow);
+    const [scheduleItems, updateStatus, updateResult, cancelExecution, isLoading] = 
+        useSchedule((state) => [
+          state.scheduleItems, 
+          state.updateStatus, 
+          state.updateResult, 
+          state.cancelExecution, 
+          state.isLoading
+        ], shallow);
     const providers = useProviders((state) => state.providers);
     const contracts = useContracts((state) => state.contracts);  
     
     const rifScheduler = useRIFSchedulerProvider();
-
-    const { enqueueSnackbar } = useSnackbar();
 
     const connectedToNetwork = useConnector(state => state.network)
 
@@ -97,6 +102,23 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
         updateStatus(selectedExecutionId, rifScheduler);
     };
 
+    const handleCancelClick = () => {
+      if (!rifScheduler || !selectedExecutionId) return;
+
+      cancelExecution(
+        selectedExecutionId, 
+        rifScheduler,
+        () =>
+          enqueueSnackbar("Cancel schedule confirmed!", {
+            variant: "success",
+          }),
+        (message) =>
+          enqueueSnackbar(message, {
+            variant: "error",
+          })
+      );
+    }
+
     if (!rifScheduler || !selectedExecutionId || !provider || !execution || !contract || !plan) return null;
 
     return (
@@ -125,7 +147,7 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                                 <IconButton aria-label="copy id" size="small" onClick={handleCopy(execution.id)}>
                                     <CopyIcon fontSize="inherit" />
                                 </IconButton>
-                                <span>{execution.id && shortAddress(execution.id)}</span>
+                                <span>{execution.id && shortText(execution.id)}</span>
                             </RegularTableCell>
                         </StyledTableRow>
                         <StyledTableRow>
@@ -139,11 +161,11 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                                 {scheduledTxExplorerAddressUrl && 
                                 <Link target="_blank" href={scheduledTxExplorerAddressUrl} rel="noreferrer" style={rowStyles}>
                                     <LinkIcon style={{fontSize:16}} />
-                                    {execution.scheduledTx && shortAddress(execution.scheduledTx)}
+                                    {execution.scheduledTx && shortText(execution.scheduledTx)}
                                 </Link>}
                                 {!scheduledTxExplorerAddressUrl && 
                                 <span>
-                                    {execution.scheduledTx && shortAddress(execution.scheduledTx)}
+                                    {execution.scheduledTx && shortText(execution.scheduledTx)}
                                 </span>}
                             </RegularTableCell>
                         </StyledTableRow>
@@ -156,11 +178,11 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                                     aria-label="refresh status" 
                                     size="small" 
                                     onClick={handleUpdateStatusClick}
-                                    disabled={isLoading}
+                                    disabled={isLoading || !execution.isConfirmed}
                                 >
                                     <RefreshIcon fontSize="inherit" />
                                 </IconButton>
-                                <StatusLabel state={execution.state} isLoading={isLoading} />
+                                <StatusLabel execution={execution} isLoading={isLoading} />
                             </RegularTableCell>
                         </StyledTableRow>
                         <StyledTableRow>
@@ -199,11 +221,11 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                                 {executedTxExplorerAddressUrl && 
                                 <Link target="_blank" href={executedTxExplorerAddressUrl} rel="noreferrer" style={rowStyles}>
                                     <LinkIcon style={{fontSize:16}} />
-                                    {execution.executedTx && shortAddress(execution.executedTx)}
+                                    {execution.executedTx && shortText(execution.executedTx)}
                                 </Link>}
                                 {!executedTxExplorerAddressUrl && 
                                 <span>
-                                    {execution.executedTx ? shortAddress(execution.executedTx) : "---"}
+                                    {execution.executedTx ? shortText(execution.executedTx) : "---"}
                                 </span>}
                             </RegularTableCell>
                         </StyledTableRow>
@@ -224,7 +246,7 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                                 >
                                   <CopyIcon fontSize="inherit" />
                                 </IconButton>}
-                                <span>{execution.result ?? "---"}</span>
+                                <span>{execution.result ? shortText(execution.result) : "---"}</span>
                             </RegularTableCell>
                         </StyledTableRow>
                     </TableBody>
@@ -234,6 +256,16 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
         <DialogActions
           style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
         >
+          <div style={{display:"flex", flex:1}}>
+            {execution.state === ExecutionState.Scheduled && (
+              <Button onClick={handleCancelClick} disabled={isLoading || !execution.isConfirmed} color="secondary" variant="contained">
+                Cancel
+              </Button>
+            )}
+            {execution.state === ExecutionState.Overdue && <Button onClick={onClose} color="secondary" variant="contained">
+              Refund
+            </Button>}
+          </div>
           <Button onClick={onClose} color="inherit">
             Close
           </Button>

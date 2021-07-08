@@ -130,6 +130,7 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
           flex: 1,
           alignItems: "center",
           flexDirection: "column",
+          paddingBottom: 60
         }}
       >
         {children}

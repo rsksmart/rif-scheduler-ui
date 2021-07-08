@@ -8,7 +8,7 @@ import { IPlan } from "../store/useProviders";
 import environment from "../shared/environment";
 import getExecutedTransaction from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
-import { ENetwork } from "../shared/types";
+import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
 
 export interface IScheduleItem {
   id?: string;
@@ -25,6 +25,7 @@ export interface IScheduleItem {
   color?: string;
   result?: string;
   executedTx?: string;
+  isConfirmed?: boolean
 }
 
 export interface IUseSchedule {
@@ -50,6 +51,12 @@ export interface IUseSchedule {
     onConfirmed: () => void,
     onFailed: (message: string) => void
   ) => Promise<void>;
+  cancelExecution: (
+    executionId: string, 
+    rifScheduler: RIFScheduler, 
+    onConfirmed: () => void, 
+    onFailed: (message: string) => void
+  ) => Promise<void>
 }
 
 const useSchedule = create<IUseSchedule>(
@@ -62,13 +69,14 @@ const useSchedule = create<IUseSchedule>(
           isLoading: true,
         }));
 
-        const newState = await rifScheduler.getExecutionState(executionId);
+        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
             [executionId]: {
               ...state.scheduleItems[executionId],
+              isConfirmed: true,
               state: newState,
             },
           },
@@ -143,17 +151,18 @@ const useSchedule = create<IUseSchedule>(
 
         scheduledExecutionTransaction
           .wait(environment.REACT_APP_CONFIRMATIONS)
-          .then((receipt) => {
+          .then(() => {
             onConfirmed()
-
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
             const [executionId] = Object.entries(get().scheduleItems)
-              .find(([id, item]) => item.scheduledTx === receipt.transactionHash) ?? []
+              .find(([id, item]) => item.scheduledTx === scheduledExecutionTransaction.hash) ?? []
 
             if (executionId) {
               get().updateStatus(executionId, rifScheduler)
             }
-          })
-          .catch(error => onFailed(`Confirmation error: ${error.message}`));
+          });
 
         set((state) => ({
           scheduleItems: {
@@ -163,6 +172,49 @@ const useSchedule = create<IUseSchedule>(
           isLoading: false,
         }));
       },
+      cancelExecution: async (executionId: string, rifScheduler: RIFScheduler, onConfirmed: () => void, onFailed: (message: string) => void) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
+
+        if (newState !== ExecutionState.Scheduled) {
+          onFailed(`Status must be: ${ExecutionStateDescriptions[ExecutionState.Scheduled]}. Current Status: ${ExecutionStateDescriptions[newState]}.`)
+          return
+        }
+
+        const cancelTransaction = await rifScheduler.cancelExecution(executionId)
+
+        cancelTransaction
+          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .then(() => {
+            onConfirmed()
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
+            const [executionId] = Object.entries(get().scheduleItems)
+              .find(([id, item]) => item.executedTx === cancelTransaction.hash) ?? []
+
+            if (executionId) {
+              get().updateStatus(executionId, rifScheduler)
+            }
+          });
+
+
+        set((state) => ({
+          scheduleItems: {
+            ...state.scheduleItems,
+            [executionId]: {
+              ...state.scheduleItems[executionId],
+              state: newState,
+              isConfirmed: false,
+              executedTx: cancelTransaction.hash
+            },
+          },
+          isLoading: false,
+        }));
+      }
     }),
     localbasePersist("schedule", ["isLoading"])
   )

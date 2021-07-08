@@ -12,7 +12,7 @@ import StoragePersistAlert from "./StoragePersistAlert";
 import contractSvg from "../assets/illustrations/contractBolt.svg";
 import NetworkLabel from "../connect/NetworkLabel";
 import CardActions from "@material-ui/core/CardActions";
-import shortAddress from "../shared/shortAddress";
+import shortText from "../shared/shortText";
 import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -111,7 +111,7 @@ const ContractButton = ({ name, address, onClick }: { name: string, address: str
             {name}
           </Typography>
           <Typography variant="body2" color="textSecondary" component="span">
-            {shortAddress(address)}
+            {shortText(address)}
           </Typography>
         </CardContent>
       </CardActionArea>
