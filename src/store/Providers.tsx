@@ -14,6 +14,8 @@ import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import PurchaseExecutions from "./PurchaseExecutions";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import PurchaseIcon from "@material-ui/icons/AddCircle";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -73,6 +75,9 @@ const Item: React.FC<{
           className={classes.part}
         />
       </Hidden>
+      <ListItemSecondaryAction>
+        <PurchaseIcon style={{ color: "rgba(0, 0, 0, 0.12)" }} />
+      </ListItemSecondaryAction>
     </ListItem>
   );
 };

@@ -27,7 +27,7 @@ import { parseISO, isValid } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
-import { fromBigNumberToHms } from "../shared/formatters";
+import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
 import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
@@ -269,15 +269,15 @@ const Schedule = () => {
                   onChange={handleFieldChange("providerPlanIndex")}
                 >
                   <MenuItem disabled>None</MenuItem>
-                  {providerPlans.map((plan, index) => (
+                  {providerPlans.map((plan) => (
                     <MenuItem
-                      key={`schedule-provider-plan-${fields?.providerId}-${index}`}
-                      value={`${index}`}
+                      key={`schedule-provider-plan-${fields?.providerId}-${plan.index}`}
+                      value={`${plan.index}`}
                     >
-                      {`#${index + 1}`}
+                      <span style={{ fontWeight: "bold" }}>{`#${plan.index + 1}`}</span>
                       <span
                         style={{ marginLeft: 8 }}
-                      >{`Window: ${fromBigNumberToHms(plan.window)}`}</span>
+                      >{`Window: ${fromBigNumberToHms(plan.window)} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}</span>
                     </MenuItem>
                   ))}
                 </Select>

@@ -1,3 +1,5 @@
+import { ExecutionState } from "@rsksmart/rif-scheduler-sdk"
+
 export enum ENetwork {
   NotSupported = -1,
   RSKMainnet = 30,
@@ -26,18 +28,8 @@ export const getExplorerTxLink = (hash: string, network: ENetwork) => {
   return new URL(`/tx/${hash}`, explorerUrl).toString()
 }
 
-export enum ExecutionState {
-  NotScheduled = 0,
-  Scheduled = 1,
-  ExecutionSuccessful = 2,
-  ExecutionFailed = 3,
-  Overdue = 4,
-  Refunded = 5,
-  Cancelled = 6,
-}
-
 export const ExecutionStateDescriptions = {
-  [ExecutionState.NotScheduled]: "Not scheduled",
+  [ExecutionState.Nonexistent]: "Not scheduled",
   [ExecutionState.Scheduled]: "Scheduled",
   [ExecutionState.ExecutionSuccessful]: "Successful",
   [ExecutionState.ExecutionFailed]: "Failed",

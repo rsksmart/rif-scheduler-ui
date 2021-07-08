@@ -1,10 +1,11 @@
 import Chip from '@material-ui/core/Chip';
-import { ExecutionState, ExecutionStateDescriptions } from "../shared/types";
+import { ExecutionStateDescriptions } from "../shared/types";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import { ExecutionState } from '@rsksmart/rif-scheduler-sdk';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    [ExecutionState.NotScheduled]: {
+    [ExecutionState.Nonexistent]: {
       color: "#333",
       border: "1px solid #f7e463",
       backgroundColor: "#f7e463"
@@ -42,7 +43,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const StatusLabel = ({ state = ExecutionState.NotScheduled, isLoading }: { state?: ExecutionState, isLoading?: boolean }) => {
+const StatusLabel = ({ state = ExecutionState.Nonexistent, isLoading }: { state?: ExecutionState, isLoading?: boolean }) => {
     const classes = useStyles();
 
     const label = isLoading ? "..." : ExecutionStateDescriptions[state]

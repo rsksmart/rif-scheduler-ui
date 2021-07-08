@@ -75,6 +75,8 @@ const Item: React.FC<{
       onClick(item.id!)
   };
 
+  console.log({item})
+
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
       <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>
@@ -96,7 +98,7 @@ const Item: React.FC<{
               {hyphensAndCamelCaseToWords(item.contractMethod)}
             </span>
           }
-          secondary={provider?.name}
+          secondary={`${provider?.name} - Plan #${+item.providerPlanIndex + 1}`}
           className={classes.part}
         />
       </Hidden>

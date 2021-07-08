@@ -30,7 +30,9 @@ import LinkIcon from '@material-ui/icons/Launch';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import shallow from "zustand/shallow";
-import { fromBigNumberToHms } from "../shared/formatters";
+import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
+import { useEffect } from "react";
+import { ExecutionState } from "@rsksmart/rif-scheduler-sdk";
 
 const rowStyles = {display:"flex", alignItems:"center", gap: "5px"}
 
@@ -52,15 +54,26 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
 
     const connectedToNetwork = useConnector(state => state.network)
 
-    if (!selectedExecutionId) return null
+    const execution = selectedExecutionId ? scheduleItems[selectedExecutionId] : null
+    const provider = execution ? providers[execution.providerId] : null
+    const contract = execution ? contracts[execution.contractId] : null
+    const plan = execution && provider ? provider.plans[+execution.providerPlanIndex] : null
 
-    const execution = scheduleItems[selectedExecutionId]
-    const provider = providers[execution.providerId]
-    const contract = contracts[execution.contractId]
-    const plan = provider.plans[execution.providerPlanIndex]
+    const scheduledTxExplorerAddressUrl = execution?.scheduledTx && connectedToNetwork &&
+        getExplorerTxLink(execution.scheduledTx, connectedToNetwork)
 
-    const explorerAddressUrl = execution.transactionId && connectedToNetwork &&
-        getExplorerTxLink(execution.transactionId, connectedToNetwork)
+    const executedTxExplorerAddressUrl = execution?.executedTx && connectedToNetwork &&
+        getExplorerTxLink(execution.executedTx, connectedToNetwork)
+
+    useEffect(() => {
+      if (!rifScheduler || !selectedExecutionId || !execution || !contract || !plan) return;
+
+      if (!execution.executedTx && 
+        [ExecutionState.ExecutionFailed, ExecutionState.ExecutionSuccessful]
+          .includes(execution.state ?? ExecutionState.Nonexistent)) {
+          updateResult(execution, contract, plan, rifScheduler);
+      }
+    }, [contract, execution, plan, rifScheduler, selectedExecutionId, updateResult])
 
     const handleCopy = (textToCopy: string | undefined | null) => () => {
         if (!textToCopy) {
@@ -79,16 +92,12 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
     };
 
     const handleUpdateStatusClick = () => {
-        if (!rifScheduler) return;
+        if (!rifScheduler || !selectedExecutionId) return;
 
         updateStatus(selectedExecutionId, rifScheduler);
     };
 
-    const handleUpdateResultClick = () => {
-      if (!rifScheduler) return;
-
-      updateResult(execution, contract, plan, rifScheduler);
-  };
+    if (!rifScheduler || !selectedExecutionId || !provider || !execution || !contract || !plan) return null;
 
     return (
       <Dialog
@@ -121,20 +130,20 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                         </StyledTableRow>
                         <StyledTableRow>
                             <StrongTableCell component="th" scope="row">
-                                Transaction
+                                Scheduled tx
                             </StrongTableCell>
                             <RegularTableCell align="right" style={rowStyles}>
-                                <IconButton aria-label="copy transaction hash" size="small" onClick={handleCopy(execution.transactionId)}>
+                                <IconButton aria-label="copy transaction hash" size="small" onClick={handleCopy(execution.scheduledTx)}>
                                     <CopyIcon fontSize="inherit" />
                                 </IconButton>
-                                {explorerAddressUrl && 
-                                <Link target="_blank" href={explorerAddressUrl} rel="noreferrer" style={rowStyles}>
+                                {scheduledTxExplorerAddressUrl && 
+                                <Link target="_blank" href={scheduledTxExplorerAddressUrl} rel="noreferrer" style={rowStyles}>
                                     <LinkIcon style={{fontSize:16}} />
-                                    {execution.transactionId && shortAddress(execution.transactionId)}
+                                    {execution.scheduledTx && shortAddress(execution.scheduledTx)}
                                 </Link>}
-                                {!explorerAddressUrl && 
+                                {!scheduledTxExplorerAddressUrl && 
                                 <span>
-                                    {execution.transactionId && shortAddress(execution.transactionId)}
+                                    {execution.scheduledTx && shortAddress(execution.scheduledTx)}
                                 </span>}
                             </RegularTableCell>
                         </StyledTableRow>
@@ -164,14 +173,6 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                         </StyledTableRow>
                         <StyledTableRow>
                             <StrongTableCell component="th" scope="row">
-                                Execution window
-                            </StrongTableCell>
-                            <RegularTableCell align="right">
-                                {fromBigNumberToHms(plan.window)}
-                            </RegularTableCell>
-                        </StyledTableRow>
-                        <StyledTableRow>
-                            <StrongTableCell component="th" scope="row">
                                 {provider.name}
                             </StrongTableCell>
                             <RegularTableCell align="right">
@@ -181,23 +182,49 @@ const ExecutionInfo = ({ selectedExecutionId, onClose }: { selectedExecutionId: 
                         </StyledTableRow>
                         <StyledTableRow>
                             <StrongTableCell component="th" scope="row">
+                                Plan #{+execution.providerPlanIndex + 1}
+                            </StrongTableCell>
+                            <RegularTableCell align="right">
+                                {`Window: ${fromBigNumberToHms(plan.window)} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}
+                            </RegularTableCell>
+                        </StyledTableRow>
+                        <StyledTableRow>
+                            <StrongTableCell component="th" scope="row">
+                                Executed tx
+                            </StrongTableCell>
+                            <RegularTableCell align="right" style={rowStyles}>
+                                {execution.executedTx && <IconButton aria-label="copy transaction hash" size="small" onClick={handleCopy(execution.executedTx)}>
+                                    <CopyIcon fontSize="inherit" />
+                                </IconButton>}
+                                {executedTxExplorerAddressUrl && 
+                                <Link target="_blank" href={executedTxExplorerAddressUrl} rel="noreferrer" style={rowStyles}>
+                                    <LinkIcon style={{fontSize:16}} />
+                                    {execution.executedTx && shortAddress(execution.executedTx)}
+                                </Link>}
+                                {!executedTxExplorerAddressUrl && 
+                                <span>
+                                    {execution.executedTx ? shortAddress(execution.executedTx) : "---"}
+                                </span>}
+                            </RegularTableCell>
+                        </StyledTableRow>
+                        <StyledTableRow>
+                            <StrongTableCell component="th" scope="row">
                                 Result
                             </StrongTableCell>
                             <RegularTableCell align="right" style={rowStyles}>
-                                <IconButton 
+                                {execution.result && <IconButton 
                                     aria-label="refresh result" 
                                     size="small" 
                                     onClick={
                                       execution.result ? 
                                         handleCopy(execution.result) :
-                                        handleUpdateResultClick
+                                        undefined
                                     }
                                     disabled={isLoading}
                                 >
-                                  {execution.result && <CopyIcon fontSize="inherit" />}
-                                  {!execution.result && <RefreshIcon fontSize="inherit" />}
-                                </IconButton>
-                                <span>{execution.result}</span>
+                                  <CopyIcon fontSize="inherit" />
+                                </IconButton>}
+                                <span>{execution.result ?? "---"}</span>
                             </RegularTableCell>
                         </StyledTableRow>
                     </TableBody>
