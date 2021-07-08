@@ -6,10 +6,19 @@ import Logo from "../assets/Logo";
 import { Link } from "react-router-dom";
 import BottomNavigation from "@material-ui/core/BottomNavigation";
 import BottomNavigationAction from "@material-ui/core/BottomNavigationAction";
-import ScheduleIcon from "@material-ui/icons/Schedule";
-import ProvidersIcon from "@material-ui/icons/Store";
+
+import HomeIcon from "@material-ui/icons/Home";
+import ScheduleIcon from "@material-ui/icons/WatchLater";
+import StoreIcon from "@material-ui/icons/Store";
 import ContractsIcon from "@material-ui/icons/Extension";
 import AccountIcon from "@material-ui/icons/AccountCircle";
+
+import HomeOutlinedIcon from "@material-ui/icons/HomeOutlined";
+import ScheduleOutlinedIcon from "@material-ui/icons/ScheduleOutlined";
+import StoreOutlinedIcon from "@material-ui/icons/StoreOutlined";
+import ContractsOutlinedIcon from "@material-ui/icons/ExtensionOutlined";
+import AccountOutlinedIcon from "@material-ui/icons/AccountCircleOutlined";
+
 import { useLocation } from "react-router-dom";
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 
@@ -41,6 +50,15 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: "flex-end",
       gap: "5px",
     },
+    navButton: {
+      padding: 0,
+      minWidth: 60,
+      paddingTop: "0px !important",
+      fontSize: "0.75rem !important"
+    },
+    navLabel: {
+      fontSize: "0.75rem !important"
+    },
     toolbar: {
       display: "flex",
       flex: 1,
@@ -60,11 +78,20 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
+enum ESection {
+  Home,
+  Schedule,
+  Store,
+  Contracts,
+  Account
+}
+
 const menuIndexes: { [key: string]: number } = {
-  "/": 0,
-  "/store": 1,
-  "/contracts": 2,
-  "/account": 3,
+  "/": ESection.Home,
+  "/schedule": ESection.Schedule,
+  "/store": ESection.Store,
+  "/contracts": ESection.Contracts,
+  "/account": ESection.Account,
 };
 
 const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
@@ -91,31 +118,53 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
                 style={{ background: "transparent" }}
               >
                 <BottomNavigationAction
-                  label="Schedule"
-                  icon={<ScheduleIcon />}
+                  label="Home"
+                  icon={menuIndexes[location.pathname] === ESection.Home ? <HomeIcon /> : <HomeOutlinedIcon />}
                   component={Link}
-                  style={{ padding: "8px 12px 6px" }}
+                  classes={{
+                    root: classes.navButton,
+                    label: classes.navLabel
+                  }}
                   to="/"
                 />
                 <BottomNavigationAction
-                  label="Store"
-                  icon={<ProvidersIcon />}
+                  label="Schedule"
+                  icon={menuIndexes[location.pathname] === ESection.Schedule ? <ScheduleIcon /> : <ScheduleOutlinedIcon />}
                   component={Link}
-                  style={{ padding: "8px 12px 6px" }}
+                  classes={{
+                    root: classes.navButton,
+                    label: classes.navLabel
+                  }}
+                  to="/schedule"
+                />
+                <BottomNavigationAction
+                  label="Store"
+                  icon={menuIndexes[location.pathname] === ESection.Store ? <StoreIcon /> : <StoreOutlinedIcon />}
+                  component={Link}
+                  classes={{
+                    root: classes.navButton,
+                    label: classes.navLabel
+                  }}
                   to="/store"
                 />
                 <BottomNavigationAction
                   label="Contracts"
-                  icon={<ContractsIcon />}
+                  icon={menuIndexes[location.pathname] === ESection.Contracts ? <ContractsIcon /> : <ContractsOutlinedIcon />}
                   component={Link}
-                  style={{ padding: "8px 12px 6px" }}
+                  classes={{
+                    root: classes.navButton,
+                    label: classes.navLabel
+                  }}
                   to="/contracts"
                 />
                 <BottomNavigationAction
                   label="Account"
-                  icon={<AccountIcon />}
+                  icon={menuIndexes[location.pathname] === ESection.Account ? <AccountIcon /> : <AccountOutlinedIcon />}
                   component={Link}
-                  style={{ padding: "8px 12px 6px" }}
+                  classes={{
+                    root: classes.navButton,
+                    label: classes.navLabel
+                  }}
                   to="/account"
                 />
               </BottomNavigation>
