@@ -2,6 +2,7 @@ import Chip from '@material-ui/core/Chip';
 import { ExecutionStateDescriptions } from "../shared/types";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import { ExecutionState } from '@rsksmart/rif-scheduler-sdk';
+import { IScheduleItem } from './useSchedule';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -43,13 +44,16 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const StatusLabel = ({ state = ExecutionState.Nonexistent, isLoading }: { state?: ExecutionState, isLoading?: boolean }) => {
+const StatusLabel = ({ execution, isLoading }: { execution: IScheduleItem, isLoading?: boolean }) => {
     const classes = useStyles();
 
-    const label = isLoading ? "..." : ExecutionStateDescriptions[state]
+    const state = execution.state ?? ExecutionState.Nonexistent
+    const isConfirmed = execution.isConfirmed
+
+    const label = isLoading ? "..." : (isConfirmed ? ExecutionStateDescriptions[state] : "Waiting confirmation")
 
     return <Chip size="small" color="primary" variant="default" label={label} classes={{
-        colorPrimary: classes[state]
+        colorPrimary: classes[isConfirmed ? state : ExecutionState.Nonexistent]
     }} />
 }
 

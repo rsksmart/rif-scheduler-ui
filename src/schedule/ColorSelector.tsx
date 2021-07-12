@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { withStyles } from "@material-ui/core/styles";
 import { red, teal, yellow, orange, lightBlue } from "@material-ui/core/colors";
 import Radio, { RadioProps } from "@material-ui/core/Radio";
+import { Typography } from "@material-ui/core";
 
 const RedRadio = withStyles({
   root: {
@@ -76,6 +77,7 @@ const ColorSelector = ({ value, onChange, disabled }: any) => {
 
   return (
     <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+      <Typography variant="caption" style={{marginLeft: 8, marginRight: 8}}>Color</Typography>
       <RedRadio
         disabled={disabled}
         checked={selectedValue === red[400]}

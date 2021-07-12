@@ -1,4 +1,4 @@
-function shortAddress(address: string): string {
+function shortText(address: string): string {
     return address
     ? `${address.substr(0, 6)}...${address.substr(
         address.length - 4,
@@ -7,4 +7,4 @@ function shortAddress(address: string): string {
     : address
 }
 
-export default shortAddress
+export default shortText
