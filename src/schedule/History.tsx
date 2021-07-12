@@ -75,8 +75,6 @@ const Item: React.FC<{
       onClick(item.id!)
   };
 
-  console.log({item})
-
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
       <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>

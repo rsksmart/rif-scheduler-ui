@@ -18,6 +18,7 @@ import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
 import useRIFSchedulerProvider from "./store/useRIFSchedulerProvider";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
+import Home from "./home/Home";
 
 function App() {
   const isConnected = useConnector(state => state.isConnected);
@@ -71,6 +72,9 @@ const ConnectedRoutes = () => {
   return (
     <Switch>
       <Route exact path="/">
+        <Home />
+      </Route>
+      <Route exact path="/schedule">
         <Schedule />
       </Route>
       <Route exact path="/store">

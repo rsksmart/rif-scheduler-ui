@@ -17,6 +17,7 @@ import DisconnectIcon from "@material-ui/icons/ExitToApp";
 import { useSnackbar } from "notistack";
 import shortText from "../shared/shortText";
 import Hidden from '@material-ui/core/Hidden';
+import NetworkLabel from "./NetworkLabel";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -59,7 +60,7 @@ const Account = () => {
   return (
     <Layout>
       <Card className={classes.root}>
-        <CardHeader title="Account" />
+        <CardHeader action={<NetworkLabel />} title="Account" />
         <CardContent style={{ padding: 0 }}>
           <List className={classes.root}>
             <ListItem button onClick={handleAccountClick}>

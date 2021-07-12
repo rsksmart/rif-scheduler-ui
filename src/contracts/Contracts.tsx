@@ -71,14 +71,15 @@ const Contracts = () => {
       />
 
       <div
-        className={classes.root}
         style={{
           marginTop: 15,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, 250px)",
-          gridAutoRows: "180px",
-          gridGap: "20px",
+          gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+          gridAutoRows: "200px",
+          gridGap: "5px",
           justifyContent: "space-between",
+          width: "100%",
+          maxWidth: 800,
         }}
       >
         {networkContracts.map(([id, contract]) => (
