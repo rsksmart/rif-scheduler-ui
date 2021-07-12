@@ -11,6 +11,7 @@ import ProvidersIcon from "@material-ui/icons/Store";
 import ContractsIcon from "@material-ui/icons/Extension";
 import AccountIcon from "@material-ui/icons/AccountCircle";
 import { useLocation } from "react-router-dom";
+import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -27,7 +28,8 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     }),
     title: ({ hideMenu }: any) => ({
-      marginLeft: -15,
+      marginTop: 8,
+      marginLeft: 5,
       flexGrow: 1,
       "@media (max-width: 500px)": {
         display: hideMenu ? "initial" : "none",
@@ -47,34 +49,39 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: 0,
       paddingLeft: 12,
     },
-    appBar: {
+    appBar: ({ scrolled }) => ({
       display: "flex",
       flex: 1,
       alignItems: "center",
-      backgroundColor: "#333",
+      backgroundColor: "#faf9f9",
       padding: 0,
-    },
+      boxShadow: scrolled ? "0px 5px 20px -5px rgb(0 0 0 / 25%)" : "none"
+    }),
   })
 );
 
 const menuIndexes: { [key: string]: number } = {
   "/": 0,
-  "/providers": 1,
+  "/store": 1,
   "/contracts": 2,
   "/account": 3,
 };
 
 const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
-  const classes = useStyles({ hideMenu });
   const location = useLocation();
+  const scrolled = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 0,
+  });
+  const classes = useStyles({ hideMenu, scrolled });
 
   return (
     <>
-      <AppBar position="sticky" className={classes.appBar}>
+      <AppBar position="sticky" className={classes.appBar} elevation={0}>
         <Toolbar className={classes.toolbar}>
           <Logo className={classes.logo} />
-          <Typography variant="h6" className={classes.title}>
-            rif scheduler
+          <Typography variant="h6" className={classes.title} color="textPrimary">
+            scheduler
           </Typography>
           {!hideMenu && (
             <div className={classes.navButtons}>
@@ -91,11 +98,11 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
                   to="/"
                 />
                 <BottomNavigationAction
-                  label="Providers"
+                  label="Store"
                   icon={<ProvidersIcon />}
                   component={Link}
                   style={{ padding: "8px 12px 6px" }}
-                  to="/providers"
+                  to="/store"
                 />
                 <BottomNavigationAction
                   label="Contracts"
@@ -123,6 +130,7 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
           flex: 1,
           alignItems: "center",
           flexDirection: "column",
+          paddingBottom: 60
         }}
       >
         {children}

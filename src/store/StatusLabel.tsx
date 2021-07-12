@@ -5,16 +5,19 @@ import { IPlan } from './useProviders';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     purchasing: {
-      color: "#f7e463",
-      border: "1px solid #f7e463"
+      color: "#333",
+      border: "1px solid #f7e463",
+      backgroundColor: "#f7e463"
     },
     active: {
-        color: "#7cd992",
-        border: "1px solid #7cd992"
+        color: "#333",
+        border: "1px solid #7cd992",
+        backgroundColor: "#7cd992"
     },
     inactive: {
-        color: "#a8a8a8",
-        border: "1px solid #a8a8a8"
+        color: "#333",
+        border: "1px solid #a8a8a8",
+        backgroundColor: "#a8a8a8"
     },
   })
 );
@@ -30,8 +33,8 @@ const StatusLabel = ({ plan }: { plan: IPlan }) => {
         classStatus = classes.purchasing
     }
 
-    return <Chip size="small" color="primary" variant="outlined" label={label} classes={{
-        outlinedPrimary: classStatus
+    return <Chip size="small" color="primary" variant="default" label={label} classes={{
+        colorPrimary: classStatus
     }} />
 }
 

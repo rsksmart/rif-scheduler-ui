@@ -1,29 +1,31 @@
-import { executionFactory, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
+import { executionFactory, ExecutionState, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
 import { parseISO } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import { IContract } from "../contracts/useContracts";
-import { IPlan } from "../providers/useProviders";
+import { IPlan } from "../store/useProviders";
 import environment from "../shared/environment";
-import getExecutionResult from "../shared/getExecutionResult";
+import getExecutedTransaction from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
-import { ENetwork, ExecutionState } from "../shared/types";
+import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
 
 export interface IScheduleItem {
   id?: string;
-  transactionId?: string;
+  scheduledTx?: string;
   title: string;
   network: ENetwork;
   executeAt: string;
   providerId: string;
-  providerPlanIndex: number;
+  providerPlanIndex: string;
   contractId: string;
   contractMethod: string;
   contractFields: string[];
   state?: ExecutionState;
   color?: string;
   result?: string;
+  executedTx?: string;
+  isConfirmed?: boolean
 }
 
 export interface IUseSchedule {
@@ -49,6 +51,12 @@ export interface IUseSchedule {
     onConfirmed: () => void,
     onFailed: (message: string) => void
   ) => Promise<void>;
+  cancelExecution: (
+    executionId: string, 
+    rifScheduler: RIFScheduler, 
+    onConfirmed: () => void, 
+    onFailed: (message: string) => void
+  ) => Promise<void>
 }
 
 const useSchedule = create<IUseSchedule>(
@@ -61,13 +69,14 @@ const useSchedule = create<IUseSchedule>(
           isLoading: true,
         }));
 
-        const newState = await rifScheduler.getExecutionState(executionId);
+        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
             [executionId]: {
               ...state.scheduleItems[executionId],
+              isConfirmed: true,
               state: newState,
             },
           },
@@ -79,7 +88,7 @@ const useSchedule = create<IUseSchedule>(
           isLoading: true,
         }));
 
-        const result = await getExecutionResult(
+        const executedTransaction = await getExecutedTransaction(
           environment.RIF_SCHEDULER_PROVIDER, 
           rifScheduler.provider as any, 
           plan.window.toNumber(), 
@@ -90,16 +99,17 @@ const useSchedule = create<IUseSchedule>(
           contract.ABI
         )
 
-        const parsedResult = result && execution.state === ExecutionState.ExecutionSuccessful ? 
-          contractInterface.decodeFunctionResult(execution.contractMethod, result.result).join(", ") : 
-          result?.result
+        const parsedResult = executedTransaction && execution.state === ExecutionState.ExecutionSuccessful ? 
+          contractInterface.decodeFunctionResult(execution.contractMethod, executedTransaction.event.result).join(", ") : 
+          executedTransaction?.event.result
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
             [execution.id!]: {
               ...state.scheduleItems[execution.id!],
-              result: parsedResult ? parsedResult : "---",
+              executedTx: executedTransaction?.txHash,
+              result: parsedResult,
             },
           },
           isLoading: false,
@@ -141,26 +151,70 @@ const useSchedule = create<IUseSchedule>(
 
         scheduledExecutionTransaction
           .wait(environment.REACT_APP_CONFIRMATIONS)
-          .then((receipt) => {
+          .then(() => {
             onConfirmed()
-
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
             const [executionId] = Object.entries(get().scheduleItems)
-              .find(([id, item]) => item.transactionId === receipt.transactionHash) ?? []
+              .find(([id, item]) => item.scheduledTx === scheduledExecutionTransaction.hash) ?? []
 
             if (executionId) {
               get().updateStatus(executionId, rifScheduler)
             }
-          })
-          .catch(error => onFailed(`Confirmation error: ${error.message}`));
+          });
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
-            [execution.id]: { ...scheduleItem, id: execution.id, transactionId: scheduledExecutionTransaction.hash },
+            [execution.id]: { ...scheduleItem, id: execution.id, scheduledTx: scheduledExecutionTransaction.hash },
           },
           isLoading: false,
         }));
       },
+      cancelExecution: async (executionId: string, rifScheduler: RIFScheduler, onConfirmed: () => void, onFailed: (message: string) => void) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
+
+        if (newState !== ExecutionState.Scheduled) {
+          onFailed(`Status must be: ${ExecutionStateDescriptions[ExecutionState.Scheduled]}. Current Status: ${ExecutionStateDescriptions[newState]}.`)
+          return
+        }
+
+        const cancelTransaction = await rifScheduler.cancelExecution(executionId)
+
+        cancelTransaction
+          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .then(() => {
+            onConfirmed()
+          })
+          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
+            const [executionId] = Object.entries(get().scheduleItems)
+              .find(([id, item]) => item.executedTx === cancelTransaction.hash) ?? []
+
+            if (executionId) {
+              get().updateStatus(executionId, rifScheduler)
+            }
+          });
+
+
+        set((state) => ({
+          scheduleItems: {
+            ...state.scheduleItems,
+            [executionId]: {
+              ...state.scheduleItems[executionId],
+              state: newState,
+              isConfirmed: false,
+              executedTx: cancelTransaction.hash
+            },
+          },
+          isLoading: false,
+        }));
+      }
     }),
     localbasePersist("schedule", ["isLoading"])
   )

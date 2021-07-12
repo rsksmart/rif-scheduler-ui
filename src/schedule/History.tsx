@@ -12,14 +12,14 @@ import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
 import useSchedule, { IScheduleItem } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import useProviders, { IProvider } from "../providers/useProviders";
+import useProviders, { IProvider } from "../store/useProviders";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
-import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
+import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import useConnector from "../connect/useConnector";
 import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
@@ -44,7 +44,7 @@ const useRowStyles = makeStyles((theme: Theme) =>
       flexDirection: "column",
       flex: 1,
     },
-    row: ({ color = "#fff" }: any) => ({
+    row: ({ color = "#333" }: any) => ({
       borderLeft: `${color} 4px solid`,
       borderBottom: `${color} 1px solid`,
       borderRadius: 15,
@@ -75,6 +75,8 @@ const Item: React.FC<{
       onClick(item.id!)
   };
 
+  console.log({item})
+
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
       <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>
@@ -84,7 +86,7 @@ const Item: React.FC<{
           secondary={`${format(parseISO(item.executeAt), "EEE do, hh:mm aaa")}`}
         />
         <div style={{paddingLeft:16, paddingRight:16}}>
-          <StatusLabel state={item.state} />
+          <StatusLabel execution={item} />
         </div>
       </div>
       <Hidden xsDown>
@@ -96,7 +98,7 @@ const Item: React.FC<{
               {hyphensAndCamelCaseToWords(item.contractMethod)}
             </span>
           }
-          secondary={provider?.name}
+          secondary={`${provider?.name} - Plan #${+item.providerPlanIndex + 1}`}
           className={classes.part}
         />
       </Hidden>
@@ -104,7 +106,7 @@ const Item: React.FC<{
         <IconButton
           edge="end"
           onClick={handleUpdateStatusClick}
-          disabled={isLoading}
+          disabled={isLoading || !item.isConfirmed}
         >
           <RefreshIcon style={{ color: item.color }} />
         </IconButton>
@@ -162,7 +164,7 @@ const History = () => {
     <>
       <ExecutionInfo selectedExecutionId={selectedExecutionId} onClose={()=>setSelectedExecutionId(null)} />
       {groupedEntries.length > 0 && (
-        <Card>
+        <Card style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
           <CardHeader
             title={isFromThisMonth ? "Current and pending" : "History"}
             action={

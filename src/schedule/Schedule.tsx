@@ -5,7 +5,6 @@ import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import DateFnsUtils from "@date-io/date-fns";
-import Hidden from "@material-ui/core/Hidden";
 import {
   MuiPickersUtilsProvider,
   KeyboardDateTimePicker,
@@ -21,18 +20,19 @@ import CardActions from "@material-ui/core/CardActions";
 import ColorSelector from "./ColorSelector";
 import History from "./History";
 import useSchedule, { IScheduleItem } from "./useSchedule";
-import useProviders from "../providers/useProviders";
+import useProviders from "../store/useProviders";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
 import { parseISO, isValid } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
-import { fromBigNumberToHms } from "../shared/formatters";
+import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
-import useRIFSchedulerProvider from "../providers/useRIFSchedulerProvider";
+import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import NetworkLabel from "../connect/NetworkLabel"
+import { Divider } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -42,7 +42,13 @@ const useStyles = makeStyles((theme: Theme) =>
       flexDirection: "column",
       width: "100%",
       maxWidth: 800,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0
     },
+    divider: {
+      width: "100%",
+      maxWidth: 800,
+    }
   })
 );
 
@@ -169,9 +175,9 @@ const Schedule = () => {
 
   return (
     <Layout>
-      <Card className={classes.root} variant="outlined">
+      <Card className={classes.root}>
         <CardHeader
-          title={<Hidden xsDown>Schedule</Hidden>}
+          title={"Schedule"}
           action={
             <NetworkLabel />
           }
@@ -263,15 +269,15 @@ const Schedule = () => {
                   onChange={handleFieldChange("providerPlanIndex")}
                 >
                   <MenuItem disabled>None</MenuItem>
-                  {providerPlans.map((plan, index) => (
+                  {providerPlans.map((plan) => (
                     <MenuItem
-                      key={`schedule-provider-plan-${fields?.providerId}-${index}`}
-                      value={`${index}`}
+                      key={`schedule-provider-plan-${fields?.providerId}-${plan.index}`}
+                      value={`${plan.index}`}
                     >
-                      {`#${index + 1}`}
+                      <span style={{ fontWeight: "bold" }}>{`#${plan.index + 1}`}</span>
                       <span
                         style={{ marginLeft: 8 }}
-                      >{`Window: ${fromBigNumberToHms(plan.window)}`}</span>
+                      >{`Window: ${fromBigNumberToHms(plan.window)} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}</span>
                     </MenuItem>
                   ))}
                 </Select>
@@ -410,11 +416,11 @@ const Schedule = () => {
           </div>
         </CardActions>
       </Card>
-
+      <Divider className={classes.divider} />
       <div
         className={classes.root}
         style={{
-          marginTop: 15,
+          //marginTop: 15,
         }}
       >
         <History />

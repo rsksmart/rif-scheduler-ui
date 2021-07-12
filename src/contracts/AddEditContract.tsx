@@ -70,7 +70,7 @@ const AddEditContract = ({
         <Button
           aria-label="add contract"
           color="primary"
-          variant="outlined"
+          variant="contained"
           size="small"
           endIcon={<AddIcon />}
           onClick={handleClickOpen}
@@ -129,7 +129,7 @@ const AddEditContract = ({
           <Button onClick={handleClose} color="inherit">
             Cancel
           </Button>
-          <Button onClick={handleSave} color="primary" variant="outlined">
+          <Button onClick={handleSave} color="primary" variant="contained">
             Save
           </Button>
         </DialogActions>

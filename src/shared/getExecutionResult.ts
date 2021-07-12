@@ -2,21 +2,26 @@ import { Contract, utils } from "ethers";
 import { providers } from "ethers";
 import { addSeconds, differenceInMinutes, subSeconds } from "date-fns"
 import { IScheduleItem } from "../schedule/useSchedule";
-import { ExecutionState } from "./types";
+import { ExecutionState } from "@rsksmart/rif-scheduler-sdk";
 
 const PROMISE_PARALLEL_NUMBER = 4 * 4
 
-export interface IExecutionResult {
+export interface IExecutedEventInfo {
     id: string;
     result: string,
     success: boolean
 }
 
-const getExecutionResult = async (contractAddress: string, provider: providers.Provider, window: number, execution: IScheduleItem) => {
+export interface IExecutedTransaction {
+    event: IExecutedEventInfo;
+    txHash: string;
+}
+
+const getExecutedTransaction = async (contractAddress: string, provider: providers.Provider, window: number, execution: IScheduleItem) => {
     if (
         !execution.id ||
         ![ExecutionState.ExecutionSuccessful, ExecutionState.ExecutionFailed]
-            .includes(execution.state ?? ExecutionState.NotScheduled)
+            .includes(execution.state ?? ExecutionState.Nonexistent)
     ) {
         return null
     }
@@ -34,7 +39,7 @@ const getExecutionResult = async (contractAddress: string, provider: providers.P
 
     const executeAt = new Date(execution.executeAt)
 
-    const scheduledTx = await provider.getTransaction(execution.transactionId!)
+    const scheduledTx = await provider.getTransaction(execution.scheduledTx!)
 
     const scheduledBlockNumber = scheduledTx.blockNumber!
     const lastBlockNumber = await provider.getBlockNumber();
@@ -52,7 +57,7 @@ const getExecutionResult = async (contractAddress: string, provider: providers.P
     const upperWindowBlock = Math.trunc(Math.min(blockNumberExecuteAtUpper, lastBlockNumber))
     const midBlockNumber = Math.trunc(blockNumberExecuteAtMid)
 
-    let foundedEvent: IExecutionResult | null = null
+    let foundedEvent: IExecutedTransaction | null = null
     let counter = 0;
     let running = []
     while(!foundedEvent) {        
@@ -96,7 +101,7 @@ const getEstimatedBlockNumber = (date: Date, fromDate: Date, initialBlockNumber:
     return initialBlockNumber + differenceInMinutes(date, fromDate) * blocksRate
 }
 
-const getEventIfExist = async (provider: providers.Provider, blockNumber: number, contractAddress: string, execution: IScheduleItem) => {
+const getEventIfExist = async (provider: providers.Provider, blockNumber: number, contractAddress: string, execution: IScheduleItem): Promise<IExecutedTransaction | null> => {
     const abi = [ "event Executed(bytes32 indexed id, bool success, bytes result)" ];
     const eventInterface = new utils.Interface(abi);
     const rifSchedulerContract = new Contract(
@@ -123,10 +128,13 @@ const getEventIfExist = async (provider: providers.Provider, blockNumber: number
         const log = receipt.logs.find(x => areEquals(x.topics, filterTopics))
 
         if (log) {
-            const result: IExecutionResult = eventInterface.parseLog(log).args as any
+            const result: IExecutedEventInfo = eventInterface.parseLog(log).args as any
             console.timeEnd("getExecutionResult")
             console.log("getExecutionResult", result)
-            return result
+            return {
+                event: result,
+                txHash: tx.hash
+            }
         }
     }
 
@@ -135,4 +143,4 @@ const getEventIfExist = async (provider: providers.Provider, blockNumber: number
 
 const areEquals = (a1: string[], a2: string[]) => a1.length === a2.length && a1.every((value, index) => value === a2[index])
 
-export default getExecutionResult
+export default getExecutedTransaction

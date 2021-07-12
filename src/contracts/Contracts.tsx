@@ -7,12 +7,12 @@ import Typography from "@material-ui/core/Typography";
 import AddEditContract from "./AddEditContract";
 import useContracts, { IContract } from "./useContracts";
 import { useState } from "react";
-import { CardActionArea } from "@material-ui/core";
+import { CardActionArea, Divider } from "@material-ui/core";
 import StoragePersistAlert from "./StoragePersistAlert";
 import contractSvg from "../assets/illustrations/contractBolt.svg";
 import NetworkLabel from "../connect/NetworkLabel";
 import CardActions from "@material-ui/core/CardActions";
-import shortAddress from "../shared/shortAddress";
+import shortText from "../shared/shortText";
 import useConnector from "../connect/useConnector";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -23,7 +23,13 @@ const useStyles = makeStyles((theme: Theme) =>
       flexDirection: "column",
       width: "100%",
       maxWidth: 800,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0
     },
+    divider: {
+      width: "100%",
+      maxWidth: 800,
+    }
   })
 );
 
@@ -41,7 +47,7 @@ const Contracts = () => {
 
   return (
     <Layout>
-      <Card className={classes.root} variant="outlined">
+      <Card className={classes.root}>
         <CardHeader action={<NetworkLabel />} title="Contracts" />
         <CardContent>
           <Typography variant="body2" color="textSecondary" component="p">
@@ -53,6 +59,7 @@ const Contracts = () => {
           <AddEditContract />
         </CardActions>
       </Card>
+      <Divider className={classes.divider} />
 
       <StoragePersistAlert />
 
@@ -104,7 +111,7 @@ const ContractButton = ({ name, address, onClick }: { name: string, address: str
             {name}
           </Typography>
           <Typography variant="body2" color="textSecondary" component="span">
-            {shortAddress(address)}
+            {shortText(address)}
           </Typography>
         </CardContent>
       </CardActionArea>

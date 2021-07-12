@@ -10,13 +10,13 @@ import {
 } from "react-router-dom";
 import { SnackbarProvider } from "notistack";
 import Schedule from "./schedule/Schedule";
-import Providers from "./providers/Providers";
+import Store from "./store/Store";
 import Contracts from "./contracts/Contracts";
-import useProviders from "./providers/useProviders";
+import useProviders from "./store/useProviders";
 import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
-import useRIFSchedulerProvider from "./providers/useRIFSchedulerProvider";
+import useRIFSchedulerProvider from "./store/useRIFSchedulerProvider";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 
 function App() {
@@ -73,8 +73,8 @@ const ConnectedRoutes = () => {
       <Route exact path="/">
         <Schedule />
       </Route>
-      <Route exact path="/providers">
-        <Providers />
+      <Route exact path="/store">
+        <Store />
       </Route>
       <Route exact path="/contracts">
         <Contracts />

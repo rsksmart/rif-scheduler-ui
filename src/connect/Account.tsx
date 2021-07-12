@@ -15,7 +15,7 @@ import {
 import AccountIcon from "@material-ui/icons/AccountBalanceWallet";
 import DisconnectIcon from "@material-ui/icons/ExitToApp";
 import { useSnackbar } from "notistack";
-import shortAddress from "../shared/shortAddress";
+import shortText from "../shared/shortText";
 import Hidden from '@material-ui/core/Hidden';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -58,7 +58,7 @@ const Account = () => {
 
   return (
     <Layout>
-      <Card className={classes.root} variant="outlined">
+      <Card className={classes.root}>
         <CardHeader title="Account" />
         <CardContent style={{ padding: 0 }}>
           <List className={classes.root}>
@@ -70,7 +70,7 @@ const Account = () => {
                 primary={"Wallet"}
                 secondary={
                   <>
-                    <Hidden smUp>{shortAddress(account!)}</Hidden>
+                    <Hidden smUp>{shortText(account!)}</Hidden>
                     <Hidden xsDown>{account}</Hidden>
                   </>
                 }

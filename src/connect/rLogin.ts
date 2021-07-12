@@ -19,7 +19,11 @@ export const rLogin = new RLogin({
 });
 
 export const isRLoginConnected = () => {
-  return localStorage.getItem("WEB3_CONNECT_CACHED_PROVIDER") ?
-    true :
-    false
+  const result = localStorage.getItem("WEB3_CONNECT_CACHED_PROVIDER") ?
+                    true :
+                    false
+
+  console.log("isRLoginConnected", result)
+
+  return result
 }
