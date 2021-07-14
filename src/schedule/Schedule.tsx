@@ -30,8 +30,7 @@ import ButtonWithLoading from "../shared/ButtonWIthLoading";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
-import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
-import NetworkLabel from "../connect/NetworkLabel"
+import NetworkLabel from "../connect/NetworkLabel";
 import { Divider } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -43,12 +42,12 @@ const useStyles = makeStyles((theme: Theme) =>
       width: "100%",
       maxWidth: 800,
       borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0
+      borderBottomRightRadius: 0,
     },
     divider: {
       width: "100%",
       maxWidth: 800,
-    }
+    },
   })
 );
 
@@ -64,8 +63,10 @@ const Schedule = () => {
 
   const providers = useProviders((state) => state.providers);
   const contracts = useContracts((state) => state.contracts);
-  const [account, connectedToNetwork] = useConnector(state => [state.account, state.network], shallow);
-  const rifScheduler = useRIFSchedulerProvider();
+  const [account, connectedToNetwork] = useConnector(
+    (state) => [state.account, state.network],
+    shallow
+  );
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -137,7 +138,8 @@ const Schedule = () => {
     )?.plans ?? [];
 
   const handleSchedule = () => {
-    // TODO: validate schedule fields
+    const provider = providers[fields?.providerId ?? ""];
+
     const isValid =
       fields &&
       fields.title &&
@@ -145,7 +147,8 @@ const Schedule = () => {
       fields.contractMethod &&
       fields.executeAt &&
       fields.providerId &&
-      fields.providerPlanIndex;
+      fields.providerPlanIndex &&
+      provider;
 
     let isContractFieldsValid = true;
     for (let i = 0; contractInputs && i < contractInputs.length; i++) {
@@ -155,11 +158,11 @@ const Schedule = () => {
       if (!isContractFieldsValid) break;
     }
 
-    if (isValid && isContractFieldsValid && rifScheduler) {
+    if (isValid && isContractFieldsValid) {
       scheduleAndSave(
-        {...fields, network: connectedToNetwork!} as IScheduleItem,
+        { ...fields, network: connectedToNetwork! } as IScheduleItem,
         contracts[fields!.contractId!],
-        rifScheduler,
+        provider,
         account!,
         () =>
           enqueueSnackbar("Execution schedule confirmed!", {
@@ -176,12 +179,7 @@ const Schedule = () => {
   return (
     <Layout>
       <Card className={classes.root}>
-        <CardHeader
-          title={"Schedule"}
-          action={
-            <NetworkLabel />
-          }
-        />
+        <CardHeader title={"Schedule"} action={<NetworkLabel />} />
         <CardContent style={{ paddingTop: 0, paddingBottom: 0 }}>
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
             <div
@@ -244,7 +242,8 @@ const Schedule = () => {
                   <MenuItem disabled>None</MenuItem>
                   {Object.entries(providers)
                     .filter(
-                      ([id, provider]) => provider.network === connectedToNetwork
+                      ([id, provider]) =>
+                        provider.network === connectedToNetwork
                     )
                     .map(([id, provider]) => (
                       <MenuItem key={`schedule-provider-${id}`} value={id}>
@@ -274,10 +273,17 @@ const Schedule = () => {
                       key={`schedule-provider-plan-${fields?.providerId}-${plan.index}`}
                       value={`${plan.index}`}
                     >
-                      <span style={{ fontWeight: "bold" }}>{`#${plan.index + 1}`}</span>
+                      <span style={{ fontWeight: "bold" }}>{`#${
+                        plan.index + 1
+                      }`}</span>
                       <span
                         style={{ marginLeft: 8 }}
-                      >{`Window: ${fromBigNumberToHms(plan.window)} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}</span>
+                      >{`Window: ${fromBigNumberToHms(
+                        plan.window
+                      )} - Gas limit: ${formatBigNumber(
+                        plan.gasLimit,
+                        0
+                      )}`}</span>
                     </MenuItem>
                   ))}
                 </Select>
@@ -308,7 +314,8 @@ const Schedule = () => {
                   <MenuItem disabled>None</MenuItem>
                   {Object.entries(contracts)
                     .filter(
-                      ([id, contract]) => contract.network === connectedToNetwork
+                      ([id, contract]) =>
+                        contract.network === connectedToNetwork
                     )
                     .map(([id, contract]) => (
                       <MenuItem key={`schedule-contract-${id}`} value={id}>
@@ -419,9 +426,11 @@ const Schedule = () => {
       <Divider className={classes.divider} />
       <div
         className={classes.root}
-        style={{
-          //marginTop: 15,
-        }}
+        style={
+          {
+            //marginTop: 15,
+          }
+        }
       >
         <History />
       </div>
