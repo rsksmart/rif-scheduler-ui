@@ -54,6 +54,12 @@ export interface IUseSchedule {
     onConfirmed: () => void,
     onFailed: (message: string) => void
   ) => Promise<void>;
+  refundExecution: (
+    executionId: string,
+    provider: IProvider,
+    onConfirmed: () => void,
+    onFailed: (message: string) => void
+  ) => Promise<void>;
 }
 
 const useSchedule = create<IUseSchedule>(
@@ -238,6 +244,62 @@ const useSchedule = create<IUseSchedule>(
               state: newState,
               isConfirmed: false,
               executedTx: cancelTransaction.hash,
+            },
+          },
+          isLoading: false,
+        }));
+      },
+      refundExecution: async (
+        executionId: string,
+        provider: IProvider,
+        onConfirmed: () => void,
+        onFailed: (message: string) => void
+      ) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const newState = (await provider.contractInstance.getExecutionState(
+          executionId
+        )) as ExecutionState;
+
+        if (newState !== ExecutionState.Overdue) {
+          onFailed(
+            `Status must be: ${
+              ExecutionStateDescriptions[ExecutionState.Scheduled]
+            }. Current Status: ${ExecutionStateDescriptions[newState]}.`
+          );
+          return;
+        }
+
+        const refundTransaction =
+          await provider.contractInstance.requestExecutionRefund(executionId);
+
+        refundTransaction
+          .wait(environment.CONFIRMATIONS)
+          .then(() => {
+            onConfirmed();
+          })
+          .catch((error) => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
+            const [executionId] =
+              Object.entries(get().scheduleItems).find(
+                ([id, item]) => item.executedTx === refundTransaction.hash
+              ) ?? [];
+
+            if (executionId) {
+              get().updateStatus(executionId, provider);
+            }
+          });
+
+        set((state) => ({
+          scheduleItems: {
+            ...state.scheduleItems,
+            [executionId]: {
+              ...state.scheduleItems[executionId],
+              state: newState,
+              isConfirmed: false,
+              executedTx: refundTransaction.hash,
             },
           },
           isLoading: false,

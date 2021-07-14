@@ -54,6 +54,7 @@ const ExecutionInfo = ({
     updateStatus,
     updateResult,
     cancelExecution,
+    refundExecution,
     isLoading,
   ] = useSchedule(
     (state) => [
@@ -61,6 +62,7 @@ const ExecutionInfo = ({
       state.updateStatus,
       state.updateResult,
       state.cancelExecution,
+      state.refundExecution,
       state.isLoading,
     ],
     shallow
@@ -133,6 +135,23 @@ const ExecutionInfo = ({
       provider,
       () =>
         enqueueSnackbar("Cancel schedule confirmed!", {
+          variant: "success",
+        }),
+      (message) =>
+        enqueueSnackbar(message, {
+          variant: "error",
+        })
+    );
+  };
+
+  const handleRefundClick = () => {
+    if (!provider || !selectedExecutionId) return;
+
+    refundExecution(
+      selectedExecutionId,
+      provider,
+      () =>
+        enqueueSnackbar("Refund execution confirmed!", {
           variant: "success",
         }),
       (message) =>
@@ -344,7 +363,12 @@ const ExecutionInfo = ({
             </Button>
           )}
           {execution.state === ExecutionState.Overdue && (
-            <Button onClick={onClose} color="secondary" variant="contained">
+            <Button
+              onClick={handleRefundClick}
+              disabled={isLoading || !execution.isConfirmed}
+              color="secondary"
+              variant="contained"
+            >
               Refund
             </Button>
           )}
