@@ -22,7 +22,7 @@ const useConnector = create<IUseConnector>((set, get) => ({
   network: undefined,
   isConnected: false,
   disconnect: async () => {
-    localStorage.clear()
+    localStorage.clear();
     set((state) => ({
       isConnected: false,
       isLoading: false,
@@ -30,52 +30,54 @@ const useConnector = create<IUseConnector>((set, get) => ({
   },
   connect: async (rProvider: any, rDisconnect: any) => {
     try {
-      if (!rDisconnect)
-        throw new Error("disconnect functions is empty")
+      if (!rDisconnect) throw new Error("disconnect functions is empty");
 
       const web3Provider = new providers.Web3Provider(rProvider);
       const [account] = await web3Provider.listAccounts();
       const signer: Signer = web3Provider.getSigner(0);
 
-      const isConnected = account && signer ? true : false
+      const isConnected = account && signer ? true : false;
 
-      const network = await web3Provider.getNetwork()
+      const network = await web3Provider.getNetwork();
 
       set((state) => ({
         account,
         provider: web3Provider,
         signer: signer,
         disconnect: async () => {
-          localStorage.clear()
+          localStorage.clear();
           set((state) => ({
             isConnected: false,
             isLoading: false,
           }));
-          rProvider.removeAllListeners()
-          rDisconnect()
+          rProvider.removeAllListeners();
+          rDisconnect();
         },
         isConnected: isConnected,
         isLoading: false,
-        network: network.chainId as ENetwork
+        network: network.chainId as ENetwork,
       }));
 
-      const handleConnectionChanges = async (rProvider: any, chainId: number) => {
+      const handleConnectionChanges = async (
+        rProvider: any,
+        chainId: number
+      ) => {
         if (!SupportedNetworks.includes(chainId)) {
           set((state) => ({
             network: parseInt(chainId.toString()) as ENetwork,
-            isLoading: true
+            isLoading: true,
           }));
-          return
+          return;
         }
 
         const web3Provider = new providers.Web3Provider(rProvider);
         const [account] = await web3Provider.listAccounts();
         const signer: Signer = web3Provider.getSigner(0);
 
-        const isConnected = account && signer ? true : false
+        const isConnected = account && signer ? true : false;
 
         if (!isConnected) {
-          get().disconnect()
+          get().disconnect();
           return;
         }
 
@@ -85,43 +87,35 @@ const useConnector = create<IUseConnector>((set, get) => ({
           signer: signer,
           account: account,
           isConnected: isConnected,
-          isLoading: false
+          isLoading: false,
         }));
-      }
+      };
 
       // Subscribe to accounts change
       rProvider.on("accountsChanged", (accounts: string[]) => {
-        if (accounts.length === 0) {
-          get().disconnect()
-          return;
-        }
-
-        set((state) => ({
-          account: accounts[0],
-        }));
+        handleConnectionChanges(rProvider, get().network as number);
       });
 
       // Subscribe to chainId change
       rProvider.on("chainChanged", (chainId: number) => {
-        handleConnectionChanges(rProvider, chainId)
+        handleConnectionChanges(rProvider, chainId);
       });
 
       // Subscribe to rProvider connection
       rProvider.on("connect", (info: { chainId: number }) => {
-        handleConnectionChanges(rProvider, info.chainId)
+        handleConnectionChanges(rProvider, info.chainId);
       });
 
       // Subscribe to rProvider disconnection
       rProvider.on("disconnect", (error: { code: number; message: string }) => {
-        get().disconnect()
+        get().disconnect();
       });
     } catch (error) {
-      console.error("connect error: ", error)
+      console.error("connect error: ", error);
       const disconnect = get().disconnect;
-      if (disconnect)
-        disconnect()
+      if (disconnect) disconnect();
     }
-  }
+  },
 }));
 
 export default useConnector;
