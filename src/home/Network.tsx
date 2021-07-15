@@ -1,4 +1,3 @@
-
 import {
   Avatar,
   Card,
@@ -6,42 +5,31 @@ import {
   Grid,
   Typography,
   makeStyles,
-  colors
-} from '@material-ui/core';
-import NetworkIcon from '@material-ui/icons/WifiTethering';
-import NetworkLabel from '../connect/NetworkLabel';
+  colors,
+} from "@material-ui/core";
+import NetworkIcon from "@material-ui/icons/WifiTethering";
+import NetworkLabel from "../connect/NetworkLabel";
 
 const useStyles = makeStyles(() => ({
   root: {
-    height: '100%',
+    height: "100%",
   },
   avatar: {
-    backgroundColor: colors.blue[600],
+    backgroundColor: colors.blueGrey[600],
     height: 56,
-    width: 56
-  }
+    width: 56,
+  },
 }));
 
 const Network = ({ className, ...rest }: any) => {
   const classes = useStyles();
 
   return (
-    <Card
-      className={[classes.root, className].join(" ")}
-      {...rest}
-    >
+    <Card className={[classes.root, className].join(" ")} {...rest}>
       <CardContent>
-        <Grid
-          container
-          justify="space-between"
-          spacing={3}
-        >
-          <Grid item style={{ flex:1 }}>
-            <Typography
-              color="textSecondary"
-              gutterBottom
-              variant="h6"
-            >
+        <Grid container justify="space-between" spacing={3}>
+          <Grid item style={{ flex: 1 }}>
+            <Typography color="textSecondary" gutterBottom variant="h6">
               NETWORK
             </Typography>
             <NetworkLabel />

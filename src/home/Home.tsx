@@ -13,7 +13,7 @@ const Home = () => {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(300px, 2fr))",
-          gridAutoRows: "160px",
+          gridAutoRows: "180px",
           gridGap: "5px",
           justifyContent: "space-between",
           width: "100%",
