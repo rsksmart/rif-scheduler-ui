@@ -9,6 +9,8 @@ import environment from "../shared/environment";
 import getExecutedTransaction from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
 import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
+import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
+import { formatBigNumber } from "../shared/formatters";
 
 export interface IScheduleItem {
   id?: string;
@@ -40,6 +42,12 @@ export interface IUseSchedule {
     plan: IPlan,
     provider: IProvider
   ) => Promise<void>;
+  validateSchedule: (
+    scheduleItem: IScheduleItem,
+    contract: IContract,
+    provider: IProvider,
+    myAccountAddress: string
+  ) => Promise<IScheduleFormDialogAlert[]>;
   scheduleAndSave: (
     scheduleItem: IScheduleItem,
     contract: IContract,
@@ -129,6 +137,81 @@ const useSchedule = create<IUseSchedule>(
           },
           isLoading: false,
         }));
+      },
+      validateSchedule: async (
+        scheduleItem: IScheduleItem,
+        contract: IContract,
+        provider: IProvider,
+        myAccountAddress: string
+      ): Promise<IScheduleFormDialogAlert[]> => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const selectedPlan = provider.plans[+scheduleItem.providerPlanIndex];
+
+        // validate enough balance to schedule
+        // validate minimum date/time
+
+        const result: IScheduleFormDialogAlert[] = [];
+
+        // validate purchased execution
+        const hasAnExecutionLeft = selectedPlan.remainingExecutions?.gt(0);
+        if (!hasAnExecutionLeft) {
+          result.push({
+            message: "You don't have executions left",
+            severity: "error",
+            actionLabel: "Purchase more",
+            actionLink: "/store",
+          });
+        }
+
+        const encodedFunctionCall = new utils.Interface(
+          contract.ABI
+        ).encodeFunctionData(
+          scheduleItem.contractMethod,
+          scheduleItem.contractFields
+        );
+
+        // if gasEstimation is undefined warn the user that the execution might fail
+        const estimatedGas = await provider.contractInstance.estimateGas(
+          provider.address,
+          encodedFunctionCall
+        );
+        if (!estimatedGas) {
+          result.push({
+            message:
+              "We couldn't estimate the gas for the execution you want to schedule. " +
+              "Hint: Make sure that all the parameters are correct and " +
+              "that you will have every execution requirement at the time of its execution.",
+            severity: "warning",
+          });
+        }
+
+        // estimatedGas is lower than the gas limit for the selected plan
+        const isInsidePlanGasLimit = selectedPlan.gasLimit.gte(
+          estimatedGas ?? 0
+        );
+        if (estimatedGas && !isInsidePlanGasLimit) {
+          result.push({
+            message:
+              `The selected plan has a gas limit of ${formatBigNumber(
+                selectedPlan.gasLimit,
+                0
+              )} which is lower that ` +
+              `our estimation for this execution (${formatBigNumber(
+                estimatedGas,
+                0
+              )}).`,
+            severity: "warning",
+          });
+        }
+
+        set(() => ({
+          isLoading: false,
+        }));
+
+        return result;
       },
       scheduleAndSave: async (
         scheduleItem: IScheduleItem,
