@@ -1,5 +1,5 @@
 import { executionFactory, ExecutionState } from "@rsksmart/rif-scheduler-sdk";
-import { parseISO } from "date-fns";
+import { addSeconds, parseISO } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
@@ -10,7 +10,7 @@ import getExecutedTransaction from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
 import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
-import { formatBigNumber } from "../shared/formatters";
+import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 
 export interface IScheduleItem {
   id?: string;
@@ -150,9 +150,6 @@ const useSchedule = create<IUseSchedule>(
 
         const selectedPlan = provider.plans[+scheduleItem.providerPlanIndex];
 
-        // validate enough balance to schedule
-        // validate minimum date/time
-
         const result: IScheduleFormDialogAlert[] = [];
 
         // validate purchased execution
@@ -175,7 +172,7 @@ const useSchedule = create<IUseSchedule>(
 
         // if gasEstimation is undefined warn the user that the execution might fail
         const estimatedGas = await provider.contractInstance.estimateGas(
-          provider.address,
+          contract.address,
           encodedFunctionCall
         );
         if (!estimatedGas) {
@@ -183,7 +180,7 @@ const useSchedule = create<IUseSchedule>(
             message:
               "We couldn't estimate the gas for the execution you want to schedule. " +
               "Hint: Make sure that all the parameters are correct and " +
-              "that you will have every execution requirement at the time of its execution.",
+              "that you will comply the execution requirements at the time of its execution.",
             severity: "warning",
           });
         }
@@ -204,6 +201,21 @@ const useSchedule = create<IUseSchedule>(
                 0
               )}).`,
             severity: "warning",
+          });
+        }
+
+        // validate minimum date/time
+        const minimumDate = addSeconds(
+          new Date(),
+          environment.MINIMUM_TIME_BEFORE_EXECUTION
+        );
+
+        if (parseISO(scheduleItem.executeAt) <= minimumDate) {
+          result.push({
+            message: `You need to schedule at least ${fromBigNumberToHms(
+              BigNumber.from(environment.MINIMUM_TIME_BEFORE_EXECUTION)
+            )} in advance.`,
+            severity: "error",
           });
         }
 
