@@ -190,6 +190,7 @@ const ScheduleForm = () => {
 
     if (provider && isFormValid) {
       handleScheduleAndSave();
+      setAlerts([]);
     }
   };
 
@@ -425,6 +426,7 @@ const ScheduleForm = () => {
               {contractInputs &&
                 contractInputs.map(({ name, type }: any, index: number) => (
                   <TextField
+                    key={`field-${name}-${type}`}
                     disabled={isLoading}
                     margin="dense"
                     label={hyphensAndCamelCaseToWords(name)}
