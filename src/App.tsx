@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import theme from "./assets/theme";
@@ -12,24 +12,17 @@ import { SnackbarProvider } from "notistack";
 import Schedule from "./schedule/Schedule";
 import Store from "./store/Store";
 import Contracts from "./contracts/Contracts";
-import useProviders from "./store/useProviders";
 import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
-import useRIFSchedulerProvider from "./store/useRIFSchedulerProvider";
+import useProvidersLoader from "./store/useProvidersLoader";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 import Home from "./home/Home";
 
 function App() {
-  const isConnected = useConnector(state => state.isConnected);
+  const isConnected = useConnector((state) => state.isConnected);
 
-  const rifScheduler = useRIFSchedulerProvider()
-
-  const loadProviders = useProviders((state) => state.load);
-
-  useEffect(() => {
-    if (rifScheduler) loadProviders(rifScheduler);
-  }, [loadProviders, rifScheduler]);
+  useProvidersLoader();
 
   const notistackRef = useRef<any>(null);
 

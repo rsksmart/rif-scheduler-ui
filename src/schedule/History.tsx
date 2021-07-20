@@ -19,7 +19,6 @@ import UpcomingIcon from "@material-ui/icons/AlarmOn";
 import { useState } from "react";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
-import useRIFSchedulerProvider from "../store/useRIFSchedulerProvider";
 import useConnector from "../connect/useConnector";
 import StatusLabel from "./StatusLabel";
 import { Hidden } from "@material-ui/core";
@@ -56,7 +55,7 @@ const Item: React.FC<{
   item: IScheduleItem;
   contract?: IContract;
   provider?: IProvider;
-  onClick?: (executionId: string) => void
+  onClick?: (executionId: string) => void;
 }> = ({ item, contract, provider, onClick }) => {
   const classes = useRowStyles({ color: item.color });
   const [updateStatus, isLoading] = useSchedule(
@@ -64,26 +63,26 @@ const Item: React.FC<{
     shallow
   );
 
-  const rifScheduler = useRIFSchedulerProvider();
-
   const handleUpdateStatusClick = () => {
-    updateStatus(item.id!, rifScheduler!);
+    updateStatus(item.id!, provider!);
   };
 
   const handleItemClick = () => {
-    if (onClick)
-      onClick(item.id!)
+    if (onClick) onClick(item.id!);
   };
 
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
-      <div className={classes.part} style={{flexDirection:"row", alignItems: "center"}}>
+      <div
+        className={classes.part}
+        style={{ flexDirection: "row", alignItems: "center" }}
+      >
         <ListItemText
           className={classes.part}
           primary={item.title}
           secondary={`${format(parseISO(item.executeAt), "EEE do, hh:mm aaa")}`}
         />
-        <div style={{paddingLeft:16, paddingRight:16}}>
+        <div style={{ paddingLeft: 16, paddingRight: 16 }}>
           <StatusLabel execution={item} />
         </div>
       </div>
@@ -120,9 +119,11 @@ interface IGroupBy {
 const History = () => {
   const classes = useStyles();
 
-  const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(null)
+  const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(
+    null
+  );
 
-  const connectedToNetwork = useConnector(state => state.network)
+  const connectedToNetwork = useConnector((state) => state.network);
 
   const [isFromThisMonth, setIsFromThisMonth] = useState(true);
 
@@ -145,9 +146,12 @@ const History = () => {
         parseISO(nextItem.executeAt)
       );
     })
-    .filter(([id, item]) =>
-      item.network === connectedToNetwork &&
-      (isFromThisMonth ? parseISO(item.executeAt) >= firstDayCurrentMonth : true)
+    .filter(
+      ([id, item]) =>
+        item.network === connectedToNetwork &&
+        (isFromThisMonth
+          ? parseISO(item.executeAt) >= firstDayCurrentMonth
+          : true)
     )
     .reduce((prev: any, [id, item]) => {
       const groupId = format(parseISO(item.executeAt), "MMM yyyy");
@@ -160,7 +164,10 @@ const History = () => {
 
   return (
     <>
-      <ExecutionInfo selectedExecutionId={selectedExecutionId} onClose={()=>setSelectedExecutionId(null)} />
+      <ExecutionInfo
+        selectedExecutionId={selectedExecutionId}
+        onClose={() => setSelectedExecutionId(null)}
+      />
       {groupedEntries.length > 0 && (
         <Card style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
           <CardHeader
