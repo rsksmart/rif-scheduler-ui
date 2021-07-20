@@ -46,12 +46,13 @@ const StoragePersistAlert = () => {
   const handleEnable = async () => {
     setEnableClicked(true);
     const isPersisted = await navigator.storage.persist();
+    localStorage.setItem("STORAGE_PERSIST_HANDLED", "YES");
     setShowAlert(!isPersisted);
   };
 
   return (
     <>
-      {showAlert && (
+      {showAlert && !localStorage.getItem("STORAGE_PERSIST_HANDLED") && (
         <Card className={classes.root}>
           <CardHeader title={"Persist Storage"} />
           <CardContent>

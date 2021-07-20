@@ -9,11 +9,11 @@ import {
   Link,
 } from "@material-ui/core";
 import StoreIcon from "@material-ui/icons/Store";
-import { BigNumber } from "ethers";
 import useConnector from "../connect/useConnector";
 import { formatBigNumber } from "../shared/formatters";
 import useProviders from "../store/useProviders";
 import { Link as RouterLink } from "react-router-dom";
+import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -26,8 +26,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const BIG_ZERO = BigNumber.from(0);
-
 const Executions = ({ className, ...rest }: any) => {
   const classes = useStyles();
 
@@ -39,11 +37,10 @@ const Executions = ({ className, ...rest }: any) => {
     ([id, provider]) => provider.network === connectedToNetwork
   );
 
-  const executionsLeft = networkProviders.reduce(
+  const executionsLeftResult = networkProviders.reduce(
     (accumulated, [id, provider]) => {
       const providerExecutionsLeft = provider.plans.reduce(
-        (accumulatedPlans, currentPlan) =>
-          accumulatedPlans.add(currentPlan.remainingExecutions ?? BIG_ZERO),
+        executionsLeft,
         BIG_ZERO
       );
 
@@ -61,7 +58,7 @@ const Executions = ({ className, ...rest }: any) => {
               REMAINING EXECUTIONS
             </Typography>
             <Typography color="textPrimary" variant="h3">
-              {formatBigNumber(executionsLeft, 0)}
+              {formatBigNumber(executionsLeftResult, 0)}
             </Typography>
             <Link component={RouterLink} color="textSecondary" to="/store">
               Go to store &rsaquo;

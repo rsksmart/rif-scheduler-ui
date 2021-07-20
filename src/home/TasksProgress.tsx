@@ -1,8 +1,6 @@
 import {
   Avatar,
   Box,
-  Card,
-  CardContent,
   Grid,
   LinearProgress,
   Typography,
@@ -12,11 +10,11 @@ import {
 } from "@material-ui/core";
 import HelpIcon from "@material-ui/icons/Help";
 import ReadyIcon from "@material-ui/icons/CheckCircle";
-import { BigNumber } from "ethers";
 import useConnector from "../connect/useConnector";
 import useProviders from "../store/useProviders";
 import { Link as RouterLink } from "react-router-dom";
 import useContracts from "../contracts/useContracts";
+import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -58,8 +56,6 @@ const TASKS = [
   },
 ];
 
-const BIG_ZERO = BigNumber.from(0);
-
 const TasksProgress = ({ className, ...rest }: any) => {
   const classes = useStyles();
 
@@ -73,11 +69,10 @@ const TasksProgress = ({ className, ...rest }: any) => {
     ([id, provider]) => provider.network === connectedToNetwork
   );
 
-  const executionsLeft = networkProviders.reduce(
+  const resultExecutionsLeft = networkProviders.reduce(
     (accumulated, [id, provider]) => {
       const providerExecutionsLeft = provider.plans.reduce(
-        (accumulatedPlans, currentPlan) =>
-          accumulatedPlans.add(currentPlan.remainingExecutions ?? BIG_ZERO),
+        executionsLeft,
         BIG_ZERO
       );
 
@@ -92,57 +87,52 @@ const TasksProgress = ({ className, ...rest }: any) => {
   );
 
   let currentTask = ETask.ReadyToSchedule;
-  if (executionsLeft.lte(BIG_ZERO)) {
+  if (resultExecutionsLeft.lte(BIG_ZERO)) {
     currentTask = ETask.PurchaseExecutions;
   } else if (networkContracts.length <= 0) {
     currentTask = ETask.RegisterContracts;
   }
 
   return (
-    <Card className={[classes.root, className].join(" ")} {...rest}>
-      <CardContent>
-        <Grid container justify="space-between" spacing={3}>
-          <Grid item style={{ flex: 1 }}>
-            <Typography color="textSecondary" gutterBottom variant="h6">
-              WHAT'S NEXT?
-            </Typography>
-            <Typography
-              color="textPrimary"
-              variant="body1"
-              style={{ marginBottom: "0.35em" }}
-            >
-              {TASKS[currentTask].title}
-            </Typography>
-            <Button
-              component={RouterLink}
-              to={TASKS[currentTask].link}
-              variant="contained"
-              color="primary"
-            >
-              {TASKS[currentTask].linkLabel}
-            </Button>
-          </Grid>
-          <Grid item>
-            {currentTask !== totalTasks && (
-              <Avatar className={classes.avatar}>
-                <HelpIcon />
-              </Avatar>
-            )}
-            {currentTask === totalTasks && (
-              <Avatar className={classes.avatarReady}>
-                <ReadyIcon />
-              </Avatar>
-            )}
-          </Grid>
+    <>
+      <Grid container justify="space-between" spacing={3}>
+        <Grid item style={{ flex: 1 }}>
+          <Typography
+            color="textPrimary"
+            variant="body1"
+            style={{ marginBottom: "0.35em" }}
+          >
+            {TASKS[currentTask].title}
+          </Typography>
+          <Button
+            component={RouterLink}
+            to={TASKS[currentTask].link}
+            variant="contained"
+            color="primary"
+          >
+            {TASKS[currentTask].linkLabel}
+          </Button>
         </Grid>
-        <Box mt={3}>
-          <LinearProgress
-            value={(currentTask * 100) / totalTasks}
-            variant="determinate"
-          />
-        </Box>
-      </CardContent>
-    </Card>
+        <Grid item>
+          {currentTask !== totalTasks && (
+            <Avatar className={classes.avatar}>
+              <HelpIcon />
+            </Avatar>
+          )}
+          {currentTask === totalTasks && (
+            <Avatar className={classes.avatarReady}>
+              <ReadyIcon />
+            </Avatar>
+          )}
+        </Grid>
+      </Grid>
+      <Box mt={3}>
+        <LinearProgress
+          value={(currentTask * 100) / totalTasks}
+          variant="determinate"
+        />
+      </Box>
+    </>
   );
 };
 

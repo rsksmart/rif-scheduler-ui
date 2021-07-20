@@ -24,12 +24,12 @@ const useStyles = makeStyles((theme: Theme) =>
       width: "100%",
       maxWidth: 800,
       borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0
+      borderBottomRightRadius: 0,
     },
     divider: {
       width: "100%",
       maxWidth: 800,
-    }
+    },
   })
 );
 
@@ -40,10 +40,11 @@ const Contracts = () => {
 
   const [editing, setEditing] = useState<IContract | null>(null);
 
-  const connectedToNetwork = useConnector(state => state.network)
+  const connectedToNetwork = useConnector((state) => state.network);
 
-  const networkContracts = Object.entries(contracts)
-    .filter(([id, contract])=> contract.network === connectedToNetwork)
+  const networkContracts = Object.entries(contracts).filter(
+    ([id, contract]) => contract.network === connectedToNetwork
+  );
 
   return (
     <Layout>
@@ -55,7 +56,7 @@ const Contracts = () => {
             later.
           </Typography>
         </CardContent>
-        <CardActions style={{padding: 16, paddingTop: 0}}>
+        <CardActions style={{ padding: 16, paddingTop: 0 }}>
           <AddEditContract />
         </CardActions>
       </Card>
@@ -75,7 +76,7 @@ const Contracts = () => {
           marginTop: 15,
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-          gridAutoRows: "200px",
+          gridAutoRows: "120px",
           gridGap: "5px",
           justifyContent: "space-between",
           width: "100%",
@@ -95,20 +96,28 @@ const Contracts = () => {
   );
 };
 
-const ContractButton = ({ name, address, onClick }: { name: string, address: string, onClick: any }) => {
+const ContractButton = ({
+  name,
+  address,
+  onClick,
+}: {
+  name: string;
+  address: string;
+  onClick: any;
+}) => {
   return (
     <Card>
       <CardActionArea
         style={{
           height: "100%",
           background: `url(${contractSvg}) no-repeat`,
-          backgroundPosition: "right -60px top -20px",
-          backgroundSize: "160px 160px",
+          backgroundPosition: "right -50px top -20px",
+          backgroundSize: "140px 140px",
         }}
         onClick={onClick}
       >
         <CardContent>
-          <Typography gutterBottom variant="h5" component="h2">
+          <Typography gutterBottom variant="h6" component="h2">
             {name}
           </Typography>
           <Typography variant="body2" color="textSecondary" component="span">

@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     logo: ({ hideMenu }: any) => ({
       height: 32,
-      "@media (max-width: 380px)": {
+      "@media (max-width: 360px)": {
         display: hideMenu ? "initial" : "none",
       },
     }),
@@ -79,11 +79,11 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 enum ESection {
-  Home,
-  Schedule,
-  Store,
-  Contracts,
-  Account,
+  Home = 0,
+  Schedule = 1,
+  Store = 2,
+  Contracts = 3,
+  Account = 4,
 }
 
 const menuIndexes: { [key: string]: number } = {
