@@ -29,10 +29,24 @@ import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import useConnector from "../connect/useConnector";
 import { useSnackbar } from "notistack";
 import NetworkLabel from "../connect/NetworkLabel";
-import { Divider } from "@material-ui/core";
+import {
+  Divider,
+  IconButton,
+  InputAdornment,
+  withStyles,
+} from "@material-ui/core";
 import ScheduleFormDialog, {
   IScheduleFormDialogAlert,
 } from "./ScheduleFormDialog";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Switch from "@material-ui/core/Switch";
+import cronstrue from "cronstrue";
+import Tooltip from "@material-ui/core/Tooltip";
+import NumberInput from "../shared/NumberInput";
+import PlusIcon from "@material-ui/icons/AddCircleRounded";
+import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
+
+const CRON_DEFAULT = "0 0 */1 * *";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -52,13 +66,26 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
+const DEFAULT_FIELDS: Partial<IScheduleItem> = {
+  cronExpression: CRON_DEFAULT,
+  cronQuantity: "0",
+};
+
 const ScheduleForm = () => {
   const classes = useStyles();
 
-  const [fields, setFields] = useState<Partial<IScheduleItem> | null>();
+  const [fields, setFields] = useState<Partial<IScheduleItem> | null>(
+    DEFAULT_FIELDS
+  );
   const [alerts, setAlerts] = useState<
     IScheduleFormDialogAlert[] | undefined
   >();
+
+  const [cronError, setCronError] = useState<string | null>(null);
+  const [cronText, setCronText] = useState<string>(
+    cronstrue.toString(CRON_DEFAULT, { verbose: true })
+  );
+  const [cronFieldFocused, setCronFieldFocused] = useState<boolean>(false);
 
   const [scheduleAndSave, validateSchedule, isLoading] = useSchedule(
     (state) => [state.scheduleAndSave, state.validateSchedule, state.isLoading],
@@ -111,8 +138,46 @@ const ScheduleForm = () => {
     setFields((values) => ({ ...values, [fieldName]: event.target.value }));
   };
 
+  const handleCronExpressionChange = (event: any) => {
+    const expression = event.target.value;
+
+    setCronError(null);
+
+    setFields((values) => ({ ...values, cronExpression: expression }));
+    try {
+      const text = cronstrue.toString(expression, { verbose: true });
+
+      setCronText(text);
+    } catch (error) {
+      let message = "";
+      if (typeof error === "string") message = error;
+      else message = error.message;
+
+      if (message.includes("Error: ")) message = message.replace("Error: ", "");
+
+      setCronText("");
+      setCronError(message);
+    }
+  };
+
+  const handleCronQuantityIncrement = (increment: number) => (event: any) => {
+    let quantity =
+      (fields?.cronQuantity ? +fields?.cronQuantity : 0) + increment;
+
+    if (quantity <= 0) quantity = 0;
+
+    setFields((values) => ({ ...values, cronQuantity: quantity.toString() }));
+  };
+
+  const handleIsRecurrentFieldChange = (event: any, checked: boolean) => {
+    setFields((values) => ({
+      ...values,
+      isRecurrent: checked,
+    }));
+  };
+
   const handleClear = () => {
-    setFields((prev) => ({}));
+    setFields((prev) => ({ ...DEFAULT_FIELDS }));
   };
 
   const abi = fields?.contractId
@@ -145,6 +210,14 @@ const ScheduleForm = () => {
       fields.providerId &&
       fields.providerPlanIndex;
 
+    const isValidRecurrence =
+      fields &&
+      (fields.isRecurrent
+        ? !cronError &&
+          fields.cronExpression &&
+          +(fields.cronQuantity ?? "0") > 0
+        : true);
+
     let isContractFieldsValid = true;
     for (let i = 0; contractInputs && i < contractInputs.length; i++) {
       isContractFieldsValid =
@@ -153,7 +226,7 @@ const ScheduleForm = () => {
       if (!isContractFieldsValid) break;
     }
 
-    return isValid && isContractFieldsValid;
+    return isValid && isValidRecurrence && isContractFieldsValid;
   };
 
   const handleSchedule = async () => {
@@ -209,7 +282,7 @@ const ScheduleForm = () => {
       provider,
       account!,
       () =>
-        enqueueSnackbar("Execution schedule confirmed!", {
+        enqueueSnackbar("Schedule confirmed!", {
           variant: "success",
         }),
       (message) =>
@@ -257,12 +330,36 @@ const ScheduleForm = () => {
                 onChange={handleFieldChange("title")}
                 value={fields?.title ? fields.title : ""}
               />
+              <FormControlLabel
+                style={{
+                  marginTop: 8,
+                  marginBottom: 4,
+                }}
+                control={
+                  <Switch
+                    checked={fields?.isRecurrent ? true : false}
+                    onChange={handleIsRecurrentFieldChange}
+                    color="primary"
+                  />
+                }
+                label="Recurrent"
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                gap: "4px",
+                justifyContent: "space-around",
+                flexWrap: "wrap",
+              }}
+            >
               <KeyboardDateTimePicker
                 disabled={isLoading}
                 margin="dense"
                 id="executeAt"
                 inputVariant="filled"
-                label="Execute At"
+                label={fields?.isRecurrent ? "Starts At" : "Execute At"}
                 format="MM/dd/yyyy HH:mm"
                 fullWidth={true}
                 style={{ flex: 1, minWidth: 200 }}
@@ -270,6 +367,79 @@ const ScheduleForm = () => {
                 onChange={handleExecuteAtChange}
                 KeyboardButtonProps={{
                   "aria-label": "change execute at",
+                }}
+              />
+              <CustomTooltip
+                open={cronFieldFocused}
+                title={cronError ? cronError : cronText}
+              >
+                <TextField
+                  disabled={isLoading || !fields?.isRecurrent}
+                  margin="dense"
+                  label="Recurrence expression"
+                  variant="filled"
+                  fullWidth
+                  style={{ flex: 1, minWidth: 200 }}
+                  onChange={handleCronExpressionChange}
+                  error={cronError && fields?.isRecurrent ? true : false}
+                  onFocus={() => setCronFieldFocused(true)}
+                  onBlur={() => setCronFieldFocused(false)}
+                  value={
+                    fields?.cronExpression !== undefined
+                      ? fields.cronExpression
+                      : CRON_DEFAULT
+                  }
+                  // InputProps={{
+                  //   endAdornment: (
+                  //     <InputAdornment position="end" style={{ paddingRight: 12 }}>
+                  //       <CronButton
+                  //         disabled={isLoading || !fields?.isRecurrent}
+                  //       />
+                  //     </InputAdornment>
+                  //   ),
+                  // }}
+                />
+              </CustomTooltip>
+              <TextField
+                disabled={isLoading || !fields?.isRecurrent}
+                margin="dense"
+                label="Executions quantity"
+                variant="filled"
+                fullWidth
+                style={{ flex: 1, minWidth: 200 }}
+                onChange={handleFieldChange("cronQuantity")}
+                value={fields?.cronQuantity ? fields.cronQuantity : "0"}
+                InputProps={{
+                  inputComponent: NumberInput as any,
+                  startAdornment: (
+                    <InputAdornment position="start" style={{ paddingLeft: 0 }}>
+                      <IconButton
+                        size="small"
+                        aria-label="sub 10 quantity"
+                        onClick={handleCronQuantityIncrement(-10)}
+                        edge="start"
+                        disabled={isLoading || !fields?.isRecurrent}
+                      >
+                        <MinusIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment
+                      position="end"
+                      style={{ paddingRight: 12, marginTop: 16 }}
+                    >
+                      <IconButton
+                        size="small"
+                        aria-label="add 10 quantity"
+                        onClick={handleCronQuantityIncrement(10)}
+                        edge="end"
+                        disabled={isLoading || !fields?.isRecurrent}
+                      >
+                        <PlusIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
               />
             </div>
@@ -486,3 +656,15 @@ const ScheduleForm = () => {
 };
 
 export default ScheduleForm;
+
+const CustomTooltip = withStyles((theme: Theme) => ({
+  tooltip: {
+    backgroundColor: "#333",
+    color: "rgba(255, 255, 255, 0.87)",
+    //boxShadow: theme.shadows[1],
+    fontSize: 11,
+    fontWeight: "bold",
+    marginTop: 2,
+    padding: 5,
+  },
+}))(Tooltip);

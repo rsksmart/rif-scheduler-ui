@@ -1,6 +1,6 @@
 import { executionFactory, ExecutionState } from "@rsksmart/rif-scheduler-sdk";
 import { addSeconds, parseISO } from "date-fns";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, ContractTransaction, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import { IContract } from "../contracts/useContracts";
@@ -11,6 +11,7 @@ import localbasePersist from "../shared/localbasePersist";
 import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
+import getDatesFromCronExpression from "../shared/getDatesFromCronExpression";
 
 export interface IScheduleItem {
   id?: string;
@@ -28,6 +29,9 @@ export interface IScheduleItem {
   result?: string;
   executedTx?: string;
   isConfirmed?: boolean;
+  isRecurrent?: boolean;
+  cronExpression?: string;
+  cronQuantity?: string;
 }
 
 export interface IUseSchedule {
@@ -148,15 +152,26 @@ const useSchedule = create<IUseSchedule>(
           isLoading: true,
         }));
 
+        // TODO: add an input form for this value
+        const valueToTransfer = BigNumber.from(0);
+
         const selectedPlan = provider.plans[+scheduleItem.providerPlanIndex];
 
         const result: IScheduleFormDialogAlert[] = [];
 
+        const executionsQuantity = scheduleItem.isRecurrent
+          ? +scheduleItem.cronQuantity!
+          : 1;
+
         // validate purchased execution
-        const hasAnExecutionLeft = selectedPlan.remainingExecutions?.gt(0);
+        const hasAnExecutionLeft =
+          selectedPlan.remainingExecutions?.gte(executionsQuantity);
         if (!hasAnExecutionLeft) {
           result.push({
-            message: "You don't have executions left",
+            message: `You don't have ${formatBigNumber(
+              BigNumber.from(executionsQuantity),
+              0
+            )} ${executionsQuantity === 1 ? "execution" : "executions"} left`,
             severity: "error",
             actionLabel: "Purchase more",
             actionLink: "/store",
@@ -219,6 +234,46 @@ const useSchedule = create<IUseSchedule>(
           });
         }
 
+        // validate existing scheduled execution
+        const executionDates = scheduleItem.isRecurrent
+          ? getDatesFromCronExpression(
+              scheduleItem.executeAt,
+              scheduleItem.cronExpression!,
+              +scheduleItem.cronQuantity!
+            )
+          : [scheduleItem.executeAt];
+
+        const executionsIds = executionDates.map((executeAt) => {
+          const executionRelated = executionFactory(
+            scheduleItem.providerPlanIndex,
+            contract.address,
+            encodedFunctionCall,
+            parseISO(executeAt),
+            valueToTransfer,
+            myAccountAddress
+          );
+
+          return executionRelated.id;
+        });
+
+        const existing =
+          Object.entries(get().scheduleItems).find(
+            ([id, item]) =>
+              executionsIds.includes(id) &&
+              item.providerId === scheduleItem.providerId
+          ) ?? [];
+
+        if (existing) {
+          const message = scheduleItem.isRecurrent
+            ? "One or more executions are already scheduled."
+            : "This execution is already scheduled";
+
+          result.push({
+            message: message,
+            severity: "error",
+          });
+        }
+
         set(() => ({
           isLoading: false,
         }));
@@ -255,35 +310,80 @@ const useSchedule = create<IUseSchedule>(
           valueToTransfer,
           myAccountAddress
         );
-        const scheduledExecutionTransaction =
-          await provider.contractInstance.schedule(execution);
 
-        scheduledExecutionTransaction
+        let scheduledExecutionTransaction: ContractTransaction | undefined =
+          undefined;
+
+        if (scheduleItem.isRecurrent) {
+          scheduledExecutionTransaction =
+            (await provider.contractInstance.scheduleMany(
+              execution,
+              scheduleItem.cronExpression!,
+              scheduleItem.cronQuantity!
+            )) as any;
+        } else {
+          scheduledExecutionTransaction =
+            (await provider.contractInstance.schedule(execution)) as any;
+        }
+
+        scheduledExecutionTransaction!
           .wait(environment.CONFIRMATIONS)
           .then(() => {
             onConfirmed();
           })
           .catch((error) => onFailed(`Confirmation error: ${error.message}`))
           .finally(() => {
-            const [executionId] =
-              Object.entries(get().scheduleItems).find(
+            console.log("confirmed finally");
+
+            const executionIds =
+              Object.entries(get().scheduleItems).filter(
                 ([id, item]) =>
-                  item.scheduledTx === scheduledExecutionTransaction.hash
+                  item.scheduledTx === scheduledExecutionTransaction!.hash &&
+                  item.providerId === scheduleItem.providerId
               ) ?? [];
 
-            if (executionId) {
-              get().updateStatus(executionId, provider);
+            console.log("confirmed", executionIds);
+
+            for (const [id] of executionIds) {
+              get().updateStatus(id, provider);
             }
           });
+
+        const executionDates = scheduleItem.isRecurrent
+          ? getDatesFromCronExpression(
+              scheduleItem.executeAt,
+              scheduleItem.cronExpression!,
+              +scheduleItem.cronQuantity!
+            )
+          : [scheduleItem.executeAt];
+
+        const executionsToSave = executionDates.reduce<{
+          [id: string]: IScheduleItem;
+        }>((result, executeAt) => {
+          const executionRelated = executionFactory(
+            scheduleItem.providerPlanIndex,
+            contract.address,
+            encodedFunctionCall,
+            parseISO(executeAt),
+            valueToTransfer,
+            myAccountAddress
+          );
+
+          return {
+            ...result,
+            [executionRelated.id]: {
+              ...scheduleItem,
+              executeAt: executeAt,
+              id: executionRelated.id,
+              scheduledTx: scheduledExecutionTransaction!.hash,
+            },
+          };
+        }, {});
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
-            [execution.id]: {
-              ...scheduleItem,
-              id: execution.id,
-              scheduledTx: scheduledExecutionTransaction.hash,
-            },
+            ...executionsToSave,
           },
           isLoading: false,
         }));
@@ -323,7 +423,9 @@ const useSchedule = create<IUseSchedule>(
           .finally(() => {
             const [executionId] =
               Object.entries(get().scheduleItems).find(
-                ([id, item]) => item.executedTx === cancelTransaction.hash
+                ([id, item]) =>
+                  item.executedTx === cancelTransaction.hash &&
+                  item.providerId === provider.id
               ) ?? [];
 
             if (executionId) {
@@ -379,7 +481,9 @@ const useSchedule = create<IUseSchedule>(
           .finally(() => {
             const [executionId] =
               Object.entries(get().scheduleItems).find(
-                ([id, item]) => item.executedTx === refundTransaction.hash
+                ([id, item]) =>
+                  item.executedTx === refundTransaction.hash &&
+                  item.providerId === provider.id
               ) ?? [];
 
             if (executionId) {
