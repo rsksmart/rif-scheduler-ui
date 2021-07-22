@@ -11,6 +11,7 @@ import TextField from "@material-ui/core/TextField";
 import useContracts, { IContract } from "./useContracts";
 import useConnector from "../connect/useConnector";
 import NetworkLabel from "../connect/NetworkLabel";
+import { ENetwork } from "../shared/types";
 
 const AddEditContract = ({
   hideButton = false,
@@ -22,12 +23,13 @@ const AddEditContract = ({
   initialFields?: IContract | null;
 }) => {
   const [open, setOpen] = useState(initialFields ? true : false);
-  const [fields, setFields] =
-    useState<Partial<IContract> | null>(initialFields);
+  const [fields, setFields] = useState<Partial<IContract> | null>(
+    initialFields
+  );
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const connectedToNetwork = useConnector(state => state.network)
+  const connectedToNetwork = useConnector((state) => state.network);
 
   const save = useContracts((state) => state.save);
 
@@ -42,10 +44,65 @@ const AddEditContract = ({
     if (onClose) onClose();
   };
 
+  const handleFillExample = () => {
+    const address = "0xfb602d3e9f3941ccd6792447d12221d54f6c51a0";
+
+    setFields({
+      id: `${connectedToNetwork}-${address}`,
+      name: "Counter Example",
+      address: address,
+      ABI: JSON.stringify(
+        [
+          {
+            anonymous: false,
+            inputs: [
+              {
+                indexed: false,
+                internalType: "uint256",
+                name: "count",
+                type: "uint256",
+              },
+            ],
+            name: "Counted",
+            type: "event",
+          },
+          {
+            inputs: [],
+            name: "count",
+            outputs: [
+              {
+                internalType: "uint256",
+                name: "",
+                type: "uint256",
+              },
+            ],
+            stateMutability: "view",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "inc",
+            outputs: [],
+            stateMutability: "payable",
+            type: "function",
+          },
+          {
+            inputs: [],
+            name: "fail",
+            outputs: [],
+            stateMutability: "pure",
+            type: "function",
+          },
+        ],
+        null,
+        2
+      ),
+    });
+  };
+
   const handleSave = () => {
     // TODO: validate contract fields
-    const isValid =
-      fields && fields.ABI && fields.address && fields.name;
+    const isValid = fields && fields.ABI && fields.address && fields.name;
 
     if (isValid) {
       save({
@@ -86,12 +143,14 @@ const AddEditContract = ({
         onClose={handleClose}
       >
         <DialogTitle>
-          <div style={{display:"flex", flex:1}}>
-            <div style={{display:"flex", flex:1}}>{fields?.id ? "Edit contract" : "Register new contract"}</div>
+          <div style={{ display: "flex", flex: 1 }}>
+            <div style={{ display: "flex", flex: 1 }}>
+              {fields?.id ? "Edit contract" : "Register new contract"}
+            </div>
             <NetworkLabel />
           </div>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent key={`add-edit-contract-${fields?.id}`}>
           <TextField
             autoFocus
             margin="dense"
@@ -126,6 +185,13 @@ const AddEditContract = ({
         <DialogActions
           style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
         >
+          {connectedToNetwork === ENetwork.RSKTestnet && (
+            <div style={{ display: "flex", flex: 1 }}>
+              <Button onClick={handleFillExample} color="secondary">
+                Fill example
+              </Button>
+            </div>
+          )}
           <Button onClick={handleClose} color="inherit">
             Cancel
           </Button>

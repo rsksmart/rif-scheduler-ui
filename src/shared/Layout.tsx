@@ -8,19 +8,19 @@ import BottomNavigation from "@material-ui/core/BottomNavigation";
 import BottomNavigationAction from "@material-ui/core/BottomNavigationAction";
 
 import HomeIcon from "@material-ui/icons/Home";
-import ScheduleIcon from "@material-ui/icons/WatchLater";
+import ScheduleIcon from "@material-ui/icons/EventAvailable";
 import StoreIcon from "@material-ui/icons/Store";
-import ContractsIcon from "@material-ui/icons/Extension";
+import ContractsIcon from "@material-ui/icons/OfflineBolt";
 import AccountIcon from "@material-ui/icons/AccountCircle";
 
 import HomeOutlinedIcon from "@material-ui/icons/HomeOutlined";
-import ScheduleOutlinedIcon from "@material-ui/icons/ScheduleOutlined";
+import ScheduleOutlinedIcon from "@material-ui/icons/EventAvailableOutlined";
 import StoreOutlinedIcon from "@material-ui/icons/StoreOutlined";
-import ContractsOutlinedIcon from "@material-ui/icons/ExtensionOutlined";
+import ContractsOutlinedIcon from "@material-ui/icons/OfflineBoltOutlined";
 import AccountOutlinedIcon from "@material-ui/icons/AccountCircleOutlined";
 
 import { useLocation } from "react-router-dom";
-import useScrollTrigger from '@material-ui/core/useScrollTrigger';
+import useScrollTrigger from "@material-ui/core/useScrollTrigger";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     logo: ({ hideMenu }: any) => ({
       height: 32,
-      "@media (max-width: 380px)": {
+      "@media (max-width: 360px)": {
         display: hideMenu ? "initial" : "none",
       },
     }),
@@ -54,10 +54,10 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: 0,
       minWidth: 60,
       paddingTop: "0px !important",
-      fontSize: "0.75rem !important"
+      fontSize: "0.75rem !important",
     },
     navLabel: {
-      fontSize: "0.75rem !important"
+      fontSize: "0.75rem !important",
     },
     toolbar: {
       display: "flex",
@@ -73,17 +73,17 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: "center",
       backgroundColor: "#faf9f9",
       padding: 0,
-      boxShadow: scrolled ? "0px 5px 20px -5px rgb(0 0 0 / 25%)" : "none"
+      boxShadow: scrolled ? "0px 5px 20px -5px rgb(0 0 0 / 25%)" : "none",
     }),
   })
 );
 
 enum ESection {
-  Home,
-  Schedule,
-  Store,
-  Contracts,
-  Account
+  Home = 0,
+  Schedule = 1,
+  Store = 2,
+  Contracts = 3,
+  Account = 4,
 }
 
 const menuIndexes: { [key: string]: number } = {
@@ -107,7 +107,11 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
       <AppBar position="sticky" className={classes.appBar} elevation={0}>
         <Toolbar className={classes.toolbar}>
           <Logo className={classes.logo} />
-          <Typography variant="h6" className={classes.title} color="textPrimary">
+          <Typography
+            variant="h6"
+            className={classes.title}
+            color="textPrimary"
+          >
             scheduler
           </Typography>
           {!hideMenu && (
@@ -119,51 +123,81 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
               >
                 <BottomNavigationAction
                   label="Home"
-                  icon={menuIndexes[location.pathname] === ESection.Home ? <HomeIcon /> : <HomeOutlinedIcon />}
+                  icon={
+                    menuIndexes[location.pathname] === ESection.Home ? (
+                      <HomeIcon />
+                    ) : (
+                      <HomeOutlinedIcon />
+                    )
+                  }
                   component={Link}
                   classes={{
                     root: classes.navButton,
-                    label: classes.navLabel
+                    label: classes.navLabel,
                   }}
                   to="/"
                 />
                 <BottomNavigationAction
                   label="Schedule"
-                  icon={menuIndexes[location.pathname] === ESection.Schedule ? <ScheduleIcon /> : <ScheduleOutlinedIcon />}
+                  icon={
+                    menuIndexes[location.pathname] === ESection.Schedule ? (
+                      <ScheduleIcon />
+                    ) : (
+                      <ScheduleOutlinedIcon />
+                    )
+                  }
                   component={Link}
                   classes={{
                     root: classes.navButton,
-                    label: classes.navLabel
+                    label: classes.navLabel,
                   }}
                   to="/schedule"
                 />
                 <BottomNavigationAction
                   label="Store"
-                  icon={menuIndexes[location.pathname] === ESection.Store ? <StoreIcon /> : <StoreOutlinedIcon />}
+                  icon={
+                    menuIndexes[location.pathname] === ESection.Store ? (
+                      <StoreIcon />
+                    ) : (
+                      <StoreOutlinedIcon />
+                    )
+                  }
                   component={Link}
                   classes={{
                     root: classes.navButton,
-                    label: classes.navLabel
+                    label: classes.navLabel,
                   }}
                   to="/store"
                 />
                 <BottomNavigationAction
                   label="Contracts"
-                  icon={menuIndexes[location.pathname] === ESection.Contracts ? <ContractsIcon /> : <ContractsOutlinedIcon />}
+                  icon={
+                    menuIndexes[location.pathname] === ESection.Contracts ? (
+                      <ContractsIcon />
+                    ) : (
+                      <ContractsOutlinedIcon />
+                    )
+                  }
                   component={Link}
                   classes={{
                     root: classes.navButton,
-                    label: classes.navLabel
+                    label: classes.navLabel,
                   }}
                   to="/contracts"
                 />
                 <BottomNavigationAction
                   label="Account"
-                  icon={menuIndexes[location.pathname] === ESection.Account ? <AccountIcon /> : <AccountOutlinedIcon />}
+                  icon={
+                    menuIndexes[location.pathname] === ESection.Account ? (
+                      <AccountIcon />
+                    ) : (
+                      <AccountOutlinedIcon />
+                    )
+                  }
                   component={Link}
                   classes={{
                     root: classes.navButton,
-                    label: classes.navLabel
+                    label: classes.navLabel,
                   }}
                   to="/account"
                 />
@@ -179,7 +213,7 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
           flex: 1,
           alignItems: "center",
           flexDirection: "column",
-          paddingBottom: 60
+          paddingBottom: 60,
         }}
       >
         {children}

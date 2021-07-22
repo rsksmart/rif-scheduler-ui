@@ -1,14 +1,16 @@
-import { executionFactory, ExecutionState, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
-import { parseISO } from "date-fns";
+import { executionFactory, ExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { addSeconds, parseISO } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import create from "zustand";
 import { persist } from "zustand/middleware";
 import { IContract } from "../contracts/useContracts";
-import { IPlan } from "../store/useProviders";
+import { IPlan, IProvider } from "../store/useProviders";
 import environment from "../shared/environment";
 import getExecutedTransaction from "../shared/getExecutionResult";
 import localbasePersist from "../shared/localbasePersist";
 import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
+import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
+import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 
 export interface IScheduleItem {
   id?: string;
@@ -25,7 +27,7 @@ export interface IScheduleItem {
   color?: string;
   result?: string;
   executedTx?: string;
-  isConfirmed?: boolean
+  isConfirmed?: boolean;
 }
 
 export interface IUseSchedule {
@@ -33,30 +35,39 @@ export interface IUseSchedule {
   scheduleItems: {
     [id: string]: IScheduleItem;
   };
-  updateStatus: (
-    executionId: string,
-    rifScheduler: RIFScheduler
-  ) => Promise<void>;
+  updateStatus: (executionId: string, provider: IProvider) => Promise<void>;
   updateResult: (
-    execution: IScheduleItem, 
+    execution: IScheduleItem,
     contract: IContract,
-    plan: IPlan, 
-    rifScheduler: RIFScheduler
+    plan: IPlan,
+    provider: IProvider
   ) => Promise<void>;
+  validateSchedule: (
+    scheduleItem: IScheduleItem,
+    contract: IContract,
+    provider: IProvider,
+    myAccountAddress: string
+  ) => Promise<IScheduleFormDialogAlert[]>;
   scheduleAndSave: (
     scheduleItem: IScheduleItem,
     contract: IContract,
-    rifScheduler: RIFScheduler,
+    provider: IProvider,
     myAccountAddress: string,
     onConfirmed: () => void,
     onFailed: (message: string) => void
   ) => Promise<void>;
   cancelExecution: (
-    executionId: string, 
-    rifScheduler: RIFScheduler, 
-    onConfirmed: () => void, 
+    executionId: string,
+    provider: IProvider,
+    onConfirmed: () => void,
     onFailed: (message: string) => void
-  ) => Promise<void>
+  ) => Promise<void>;
+  refundExecution: (
+    executionId: string,
+    provider: IProvider,
+    onConfirmed: () => void,
+    onFailed: (message: string) => void
+  ) => Promise<void>;
 }
 
 const useSchedule = create<IUseSchedule>(
@@ -64,12 +75,14 @@ const useSchedule = create<IUseSchedule>(
     (set, get) => ({
       isLoading: false,
       scheduleItems: {},
-      updateStatus: async (executionId: string, rifScheduler: RIFScheduler) => {
+      updateStatus: async (executionId: string, provider: IProvider) => {
         set(() => ({
           isLoading: true,
         }));
 
-        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
+        const newState = (await provider.contractInstance.getExecutionState(
+          executionId
+        )) as ExecutionState;
 
         set((state) => ({
           scheduleItems: {
@@ -83,25 +96,35 @@ const useSchedule = create<IUseSchedule>(
           isLoading: false,
         }));
       },
-      updateResult: async (execution: IScheduleItem, contract: IContract, plan: IPlan, rifScheduler: RIFScheduler) => {
+      updateResult: async (
+        execution: IScheduleItem,
+        contract: IContract,
+        plan: IPlan,
+        provider: IProvider
+      ) => {
         set(() => ({
           isLoading: true,
         }));
 
         const executedTransaction = await getExecutedTransaction(
-          environment.RIF_SCHEDULER_PROVIDER, 
-          rifScheduler.provider as any, 
-          plan.window.toNumber(), 
+          provider.address,
+          provider.contractInstance.provider as any,
+          plan.window.toNumber(),
           execution
-        )
+        );
 
-        const contractInterface = new utils.Interface(
-          contract.ABI
-        )
+        const contractInterface = new utils.Interface(contract.ABI);
 
-        const parsedResult = executedTransaction && execution.state === ExecutionState.ExecutionSuccessful ? 
-          contractInterface.decodeFunctionResult(execution.contractMethod, executedTransaction.event.result).join(", ") : 
-          executedTransaction?.event.result
+        const parsedResult =
+          executedTransaction &&
+          execution.state === ExecutionState.ExecutionSuccessful
+            ? contractInterface
+                .decodeFunctionResult(
+                  execution.contractMethod,
+                  executedTransaction.event.result
+                )
+                .join(", ")
+            : executedTransaction?.event.result;
 
         set((state) => ({
           scheduleItems: {
@@ -115,10 +138,97 @@ const useSchedule = create<IUseSchedule>(
           isLoading: false,
         }));
       },
+      validateSchedule: async (
+        scheduleItem: IScheduleItem,
+        contract: IContract,
+        provider: IProvider,
+        myAccountAddress: string
+      ): Promise<IScheduleFormDialogAlert[]> => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const selectedPlan = provider.plans[+scheduleItem.providerPlanIndex];
+
+        const result: IScheduleFormDialogAlert[] = [];
+
+        // validate purchased execution
+        const hasAnExecutionLeft = selectedPlan.remainingExecutions?.gt(0);
+        if (!hasAnExecutionLeft) {
+          result.push({
+            message: "You don't have executions left",
+            severity: "error",
+            actionLabel: "Purchase more",
+            actionLink: "/store",
+          });
+        }
+
+        const encodedFunctionCall = new utils.Interface(
+          contract.ABI
+        ).encodeFunctionData(
+          scheduleItem.contractMethod,
+          scheduleItem.contractFields
+        );
+
+        // if gasEstimation is undefined warn the user that the execution might fail
+        const estimatedGas = await provider.contractInstance.estimateGas(
+          contract.address,
+          encodedFunctionCall
+        );
+        if (!estimatedGas) {
+          result.push({
+            message:
+              "We couldn't estimate the gas for the execution you want to schedule. " +
+              "Hint: Make sure that all the parameters are correct and " +
+              "that you will comply the execution requirements at the time of its execution.",
+            severity: "warning",
+          });
+        }
+
+        // estimatedGas is lower than the gas limit for the selected plan
+        const isInsidePlanGasLimit = selectedPlan.gasLimit.gte(
+          estimatedGas ?? 0
+        );
+        if (estimatedGas && !isInsidePlanGasLimit) {
+          result.push({
+            message:
+              `The selected plan has a gas limit of ${formatBigNumber(
+                selectedPlan.gasLimit,
+                0
+              )} which is lower that ` +
+              `our estimation for this execution (${formatBigNumber(
+                estimatedGas,
+                0
+              )}).`,
+            severity: "warning",
+          });
+        }
+
+        // validate minimum date/time
+        const minimumDate = addSeconds(
+          new Date(),
+          environment.MINIMUM_TIME_BEFORE_EXECUTION
+        );
+
+        if (parseISO(scheduleItem.executeAt) <= minimumDate) {
+          result.push({
+            message: `You need to schedule at least ${fromBigNumberToHms(
+              BigNumber.from(environment.MINIMUM_TIME_BEFORE_EXECUTION)
+            )} in advance.`,
+            severity: "error",
+          });
+        }
+
+        set(() => ({
+          isLoading: false,
+        }));
+
+        return result;
+      },
       scheduleAndSave: async (
         scheduleItem: IScheduleItem,
         contract: IContract,
-        rifScheduler: RIFScheduler,
+        provider: IProvider,
         myAccountAddress: string,
         onConfirmed: () => void,
         onFailed: (message: string) => void
@@ -145,62 +255,81 @@ const useSchedule = create<IUseSchedule>(
           valueToTransfer,
           myAccountAddress
         );
-        const scheduledExecutionTransaction = await rifScheduler.schedule(
-          execution
-        );
+        const scheduledExecutionTransaction =
+          await provider.contractInstance.schedule(execution);
 
         scheduledExecutionTransaction
-          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .wait(environment.CONFIRMATIONS)
           .then(() => {
-            onConfirmed()
+            onConfirmed();
           })
-          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .catch((error) => onFailed(`Confirmation error: ${error.message}`))
           .finally(() => {
-            const [executionId] = Object.entries(get().scheduleItems)
-              .find(([id, item]) => item.scheduledTx === scheduledExecutionTransaction.hash) ?? []
+            const [executionId] =
+              Object.entries(get().scheduleItems).find(
+                ([id, item]) =>
+                  item.scheduledTx === scheduledExecutionTransaction.hash
+              ) ?? [];
 
             if (executionId) {
-              get().updateStatus(executionId, rifScheduler)
+              get().updateStatus(executionId, provider);
             }
           });
 
         set((state) => ({
           scheduleItems: {
             ...state.scheduleItems,
-            [execution.id]: { ...scheduleItem, id: execution.id, scheduledTx: scheduledExecutionTransaction.hash },
+            [execution.id]: {
+              ...scheduleItem,
+              id: execution.id,
+              scheduledTx: scheduledExecutionTransaction.hash,
+            },
           },
           isLoading: false,
         }));
       },
-      cancelExecution: async (executionId: string, rifScheduler: RIFScheduler, onConfirmed: () => void, onFailed: (message: string) => void) => {
+      cancelExecution: async (
+        executionId: string,
+        provider: IProvider,
+        onConfirmed: () => void,
+        onFailed: (message: string) => void
+      ) => {
         set(() => ({
           isLoading: true,
         }));
 
-        const newState = await rifScheduler.getExecutionState(executionId) as ExecutionState;
+        const newState = (await provider.contractInstance.getExecutionState(
+          executionId
+        )) as ExecutionState;
 
         if (newState !== ExecutionState.Scheduled) {
-          onFailed(`Status must be: ${ExecutionStateDescriptions[ExecutionState.Scheduled]}. Current Status: ${ExecutionStateDescriptions[newState]}.`)
-          return
+          onFailed(
+            `Status must be: ${
+              ExecutionStateDescriptions[ExecutionState.Scheduled]
+            }. Current Status: ${ExecutionStateDescriptions[newState]}.`
+          );
+          return;
         }
 
-        const cancelTransaction = await rifScheduler.cancelExecution(executionId)
+        const cancelTransaction =
+          await provider.contractInstance.cancelExecution(executionId);
 
         cancelTransaction
-          .wait(environment.REACT_APP_CONFIRMATIONS)
+          .wait(environment.CONFIRMATIONS)
           .then(() => {
-            onConfirmed()
+            onConfirmed();
           })
-          .catch(error => onFailed(`Confirmation error: ${error.message}`))
+          .catch((error) => onFailed(`Confirmation error: ${error.message}`))
           .finally(() => {
-            const [executionId] = Object.entries(get().scheduleItems)
-              .find(([id, item]) => item.executedTx === cancelTransaction.hash) ?? []
+            const [executionId] =
+              Object.entries(get().scheduleItems).find(
+                ([id, item]) => item.executedTx === cancelTransaction.hash
+              ) ?? [];
 
             if (executionId) {
-              get().updateStatus(executionId, rifScheduler)
+              get().updateStatus(executionId, provider);
             }
           });
-
 
         set((state) => ({
           scheduleItems: {
@@ -209,12 +338,68 @@ const useSchedule = create<IUseSchedule>(
               ...state.scheduleItems[executionId],
               state: newState,
               isConfirmed: false,
-              executedTx: cancelTransaction.hash
+              executedTx: cancelTransaction.hash,
             },
           },
           isLoading: false,
         }));
-      }
+      },
+      refundExecution: async (
+        executionId: string,
+        provider: IProvider,
+        onConfirmed: () => void,
+        onFailed: (message: string) => void
+      ) => {
+        set(() => ({
+          isLoading: true,
+        }));
+
+        const newState = (await provider.contractInstance.getExecutionState(
+          executionId
+        )) as ExecutionState;
+
+        if (newState !== ExecutionState.Overdue) {
+          onFailed(
+            `Status must be: ${
+              ExecutionStateDescriptions[ExecutionState.Scheduled]
+            }. Current Status: ${ExecutionStateDescriptions[newState]}.`
+          );
+          return;
+        }
+
+        const refundTransaction =
+          await provider.contractInstance.requestExecutionRefund(executionId);
+
+        refundTransaction
+          .wait(environment.CONFIRMATIONS)
+          .then(() => {
+            onConfirmed();
+          })
+          .catch((error) => onFailed(`Confirmation error: ${error.message}`))
+          .finally(() => {
+            const [executionId] =
+              Object.entries(get().scheduleItems).find(
+                ([id, item]) => item.executedTx === refundTransaction.hash
+              ) ?? [];
+
+            if (executionId) {
+              get().updateStatus(executionId, provider);
+            }
+          });
+
+        set((state) => ({
+          scheduleItems: {
+            ...state.scheduleItems,
+            [executionId]: {
+              ...state.scheduleItems[executionId],
+              state: newState,
+              isConfirmed: false,
+              executedTx: refundTransaction.hash,
+            },
+          },
+          isLoading: false,
+        }));
+      },
     }),
     localbasePersist("schedule", ["isLoading"])
   )
