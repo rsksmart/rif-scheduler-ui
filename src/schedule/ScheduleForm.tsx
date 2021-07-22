@@ -45,8 +45,7 @@ import Tooltip from "@material-ui/core/Tooltip";
 import NumberInput from "../shared/NumberInput";
 import PlusIcon from "@material-ui/icons/AddCircleRounded";
 import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
-
-const CRON_DEFAULT = "0 0 */1 * *";
+import CronButton, { CRON_DEFAULT } from "./CronButton";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -389,15 +388,24 @@ const ScheduleForm = () => {
                       ? fields.cronExpression
                       : CRON_DEFAULT
                   }
-                  // InputProps={{
-                  //   endAdornment: (
-                  //     <InputAdornment position="end" style={{ paddingRight: 12 }}>
-                  //       <CronButton
-                  //         disabled={isLoading || !fields?.isRecurrent}
-                  //       />
-                  //     </InputAdornment>
-                  //   ),
-                  // }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment
+                        position="end"
+                        style={{ paddingRight: 12 }}
+                      >
+                        <CronButton
+                          onChange={handleCronExpressionChange}
+                          value={
+                            fields?.cronExpression !== undefined
+                              ? fields.cronExpression
+                              : CRON_DEFAULT
+                          }
+                          disabled={isLoading || !fields?.isRecurrent}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </CustomTooltip>
               <TextField

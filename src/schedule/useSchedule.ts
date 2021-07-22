@@ -333,16 +333,12 @@ const useSchedule = create<IUseSchedule>(
           })
           .catch((error) => onFailed(`Confirmation error: ${error.message}`))
           .finally(() => {
-            console.log("confirmed finally");
-
             const executionIds =
               Object.entries(get().scheduleItems).filter(
                 ([id, item]) =>
                   item.scheduledTx === scheduledExecutionTransaction!.hash &&
                   item.providerId === scheduleItem.providerId
               ) ?? [];
-
-            console.log("confirmed", executionIds);
 
             for (const [id] of executionIds) {
               get().updateStatus(id, provider);
