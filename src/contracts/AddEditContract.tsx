@@ -45,7 +45,7 @@ const AddEditContract = ({
   };
 
   const handleFillExample = () => {
-    const address = "0xfb602d3e9f3941ccd6792447d12221d54f6c51a0";
+    const address = "0x4050C33e00AAF070A4001AcbfD29778986D4A4f9";
 
     setFields({
       id: `${connectedToNetwork}-${address}`,
