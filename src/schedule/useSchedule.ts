@@ -12,6 +12,7 @@ import { ENetwork, ExecutionStateDescriptions } from "../shared/types";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import getDatesFromCronExpression from "../shared/getDatesFromCronExpression";
+import { ICronField } from "./cronParser/convertToCronExpression";
 
 export interface IScheduleItem {
   id?: string;
@@ -30,7 +31,7 @@ export interface IScheduleItem {
   executedTx?: string;
   isConfirmed?: boolean;
   isRecurrent?: boolean;
-  cronExpression?: string;
+  cronFields?: ICronField;
   cronQuantity?: string;
 }
 
@@ -238,7 +239,7 @@ const useSchedule = create<IUseSchedule>(
         const executionDates = scheduleItem.isRecurrent
           ? getDatesFromCronExpression(
               scheduleItem.executeAt,
-              scheduleItem.cronExpression!,
+              scheduleItem.cronFields?.expression!,
               +scheduleItem.cronQuantity!
             )
           : [scheduleItem.executeAt];
@@ -318,7 +319,7 @@ const useSchedule = create<IUseSchedule>(
           scheduledExecutionTransaction =
             (await provider.contractInstance.scheduleMany(
               execution,
-              scheduleItem.cronExpression!,
+              scheduleItem.cronFields?.expression!,
               scheduleItem.cronQuantity!
             )) as any;
         } else {
@@ -348,7 +349,7 @@ const useSchedule = create<IUseSchedule>(
         const executionDates = scheduleItem.isRecurrent
           ? getDatesFromCronExpression(
               scheduleItem.executeAt,
-              scheduleItem.cronExpression!,
+              scheduleItem.cronFields?.expression!,
               +scheduleItem.cronQuantity!
             )
           : [scheduleItem.executeAt];

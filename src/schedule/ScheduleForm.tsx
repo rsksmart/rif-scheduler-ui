@@ -40,12 +40,12 @@ import ScheduleFormDialog, {
 } from "./ScheduleFormDialog";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Switch from "@material-ui/core/Switch";
-import cronstrue from "cronstrue";
 import Tooltip from "@material-ui/core/Tooltip";
 import NumberInput from "../shared/NumberInput";
 import PlusIcon from "@material-ui/icons/AddCircleRounded";
 import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
-import CronButton, { CRON_DEFAULT } from "./CronButton";
+import CronButton from "./CronButton";
+import { DEFAULT_CRON_FIELD } from "./cronParser/convertToCronExpression";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -66,7 +66,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 const DEFAULT_FIELDS: Partial<IScheduleItem> = {
-  cronExpression: CRON_DEFAULT,
+  cronFields: DEFAULT_CRON_FIELD,
   cronQuantity: "0",
 };
 
@@ -80,10 +80,6 @@ const ScheduleForm = () => {
     IScheduleFormDialogAlert[] | undefined
   >();
 
-  const [cronError, setCronError] = useState<string | null>(null);
-  const [cronText, setCronText] = useState<string>(
-    cronstrue.toString(CRON_DEFAULT, { verbose: true })
-  );
   const [cronFieldFocused, setCronFieldFocused] = useState<boolean>(false);
 
   const [scheduleAndSave, validateSchedule, isLoading] = useSchedule(
@@ -137,26 +133,10 @@ const ScheduleForm = () => {
     setFields((values) => ({ ...values, [fieldName]: event.target.value }));
   };
 
-  const handleCronExpressionChange = (event: any) => {
-    const expression = event.target.value;
+  const handleCronFieldsChange = (event: any) => {
+    const cronFields = event.target.value;
 
-    setCronError(null);
-
-    setFields((values) => ({ ...values, cronExpression: expression }));
-    try {
-      const text = cronstrue.toString(expression, { verbose: true });
-
-      setCronText(text);
-    } catch (error) {
-      let message = "";
-      if (typeof error === "string") message = error;
-      else message = error.message;
-
-      if (message.includes("Error: ")) message = message.replace("Error: ", "");
-
-      setCronText("");
-      setCronError(message);
-    }
+    setFields((values) => ({ ...values, cronFields }));
   };
 
   const handleCronQuantityIncrement = (increment: number) => (event: any) => {
@@ -212,9 +192,7 @@ const ScheduleForm = () => {
     const isValidRecurrence =
       fields &&
       (fields.isRecurrent
-        ? !cronError &&
-          fields.cronExpression &&
-          +(fields.cronQuantity ?? "0") > 0
+        ? fields.cronFields && +(fields.cronQuantity ?? "0") > 0
         : true);
 
     let isContractFieldsValid = true;
@@ -370,7 +348,10 @@ const ScheduleForm = () => {
               />
               <CustomTooltip
                 open={cronFieldFocused}
-                title={cronError ? cronError : cronText}
+                title={
+                  fields?.cronFields?.description ??
+                  "Failed to load the description"
+                }
               >
                 <TextField
                   disabled={isLoading || !fields?.isRecurrent}
@@ -379,15 +360,16 @@ const ScheduleForm = () => {
                   variant="filled"
                   fullWidth
                   style={{ flex: 1, minWidth: 200 }}
-                  onChange={handleCronExpressionChange}
-                  error={cronError && fields?.isRecurrent ? true : false}
                   onFocus={() => setCronFieldFocused(true)}
                   onBlur={() => setCronFieldFocused(false)}
-                  value={
-                    fields?.cronExpression !== undefined
-                      ? fields.cronExpression
-                      : CRON_DEFAULT
-                  }
+                  value={fields?.cronFields?.description}
+                  inputProps={{
+                    style: {
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment
@@ -395,12 +377,8 @@ const ScheduleForm = () => {
                         style={{ paddingRight: 12 }}
                       >
                         <CronButton
-                          onChange={handleCronExpressionChange}
-                          value={
-                            fields?.cronExpression !== undefined
-                              ? fields.cronExpression
-                              : CRON_DEFAULT
-                          }
+                          onChange={handleCronFieldsChange}
+                          value={fields?.cronFields ?? DEFAULT_CRON_FIELD}
                           disabled={isLoading || !fields?.isRecurrent}
                         />
                       </InputAdornment>
