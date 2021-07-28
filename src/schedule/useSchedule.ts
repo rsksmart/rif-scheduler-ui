@@ -264,7 +264,7 @@ const useSchedule = create<IUseSchedule>(
               item.providerId === scheduleItem.providerId
           ) ?? [];
 
-        if (existing) {
+        if (existing.length > 0) {
           const message = scheduleItem.isRecurrent
             ? "One or more executions are already scheduled."
             : "This execution is already scheduled";
