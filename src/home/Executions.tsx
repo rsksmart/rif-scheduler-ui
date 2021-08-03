@@ -11,7 +11,7 @@ import {
 import StoreIcon from "@material-ui/icons/Store";
 import useConnector from "../connect/useConnector";
 import { formatBigNumber } from "../shared/formatters";
-import useProviders from "../store/useProviders";
+import useProviders from "../store/useProviders.old";
 import { Link as RouterLink } from "react-router-dom";
 import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
 
@@ -39,7 +39,7 @@ const Executions = ({ className, ...rest }: any) => {
 
   const executionsLeftResult = networkProviders.reduce(
     (accumulated, [id, provider]) => {
-      const providerExecutionsLeft = provider.plans.reduce(
+      const providerExecutionsLeft = provider.plansPurchaseStatus.reduce(
         executionsLeft,
         BIG_ZERO
       );

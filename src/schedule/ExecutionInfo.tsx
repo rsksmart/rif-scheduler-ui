@@ -13,7 +13,7 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
 import useContracts from "../contracts/useContracts";
-import useProviders from "../store/useProviders";
+import useProviders from "../store/useProviders.old";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 import StatusLabel from "./StatusLabel";
@@ -31,7 +31,7 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 import shallow from "zustand/shallow";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import { useEffect } from "react";
-import { ExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
 
 const rowStyles = { display: "flex", alignItems: "center", gap: "5px" };
 
@@ -77,8 +77,10 @@ const ExecutionInfo = ({
     : null;
   const provider = execution ? providers[execution.providerId] : null;
   const contract = execution ? contracts[execution.contractId] : null;
-  const plan =
-    execution && provider ? provider.plans[+execution.providerPlanIndex] : null;
+  const planPurchaseStatus =
+    execution && provider
+      ? provider.plansPurchaseStatus[+execution.providerPlanIndex]
+      : null;
 
   const scheduledTxExplorerAddressUrl =
     execution?.scheduledTx &&
@@ -91,19 +93,32 @@ const ExecutionInfo = ({
     getExplorerTxLink(execution.executedTx, connectedToNetwork);
 
   useEffect(() => {
-    if (!provider || !selectedExecutionId || !execution || !contract || !plan)
+    if (
+      !provider ||
+      !selectedExecutionId ||
+      !execution ||
+      !contract ||
+      !planPurchaseStatus
+    )
       return;
 
     if (
       !execution.executedTx &&
       [
-        ExecutionState.ExecutionFailed,
-        ExecutionState.ExecutionSuccessful,
-      ].includes(execution.state ?? ExecutionState.Nonexistent)
+        EExecutionState.ExecutionFailed,
+        EExecutionState.ExecutionSuccessful,
+      ].includes(execution.state ?? EExecutionState.NotScheduled)
     ) {
-      updateResult(execution, contract, plan, provider);
+      updateResult(execution, contract, planPurchaseStatus, provider);
     }
-  }, [contract, execution, plan, provider, selectedExecutionId, updateResult]);
+  }, [
+    contract,
+    execution,
+    planPurchaseStatus,
+    provider,
+    selectedExecutionId,
+    updateResult,
+  ]);
 
   const handleCopy = (textToCopy: string | undefined | null) => () => {
     if (!textToCopy) {
@@ -118,7 +133,7 @@ const ExecutionInfo = ({
     }
 
     navigator.clipboard.writeText(textToCopy);
-    enqueueSnackbar("Copied!");
+    enqueueSnackbar("Copied!", { autoHideDuration: 500 });
   };
 
   const handleUpdateStatusClick = () => {
@@ -167,7 +182,7 @@ const ExecutionInfo = ({
     !provider ||
     !execution ||
     !contract ||
-    !plan
+    !planPurchaseStatus
   )
     return null;
 
@@ -282,8 +297,11 @@ const ExecutionInfo = ({
                 </StrongTableCell>
                 <RegularTableCell align="right">
                   {`Window: ${fromBigNumberToHms(
-                    plan.window
-                  )} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}
+                    planPurchaseStatus.plan.window
+                  )} - Gas limit: ${formatBigNumber(
+                    planPurchaseStatus.plan.gasLimit,
+                    0
+                  )}`}
                 </RegularTableCell>
               </StyledTableRow>
               <StyledTableRow>
@@ -352,7 +370,7 @@ const ExecutionInfo = ({
         style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
       >
         <div style={{ display: "flex", flex: 1 }}>
-          {execution.state === ExecutionState.Scheduled && (
+          {execution.state === EExecutionState.Scheduled && (
             <Button
               onClick={handleCancelClick}
               disabled={isLoading || !execution.isConfirmed}
@@ -362,7 +380,7 @@ const ExecutionInfo = ({
               Cancel
             </Button>
           )}
-          {execution.state === ExecutionState.Overdue && (
+          {execution.state === EExecutionState.Overdue && (
             <Button
               onClick={handleRefundClick}
               disabled={isLoading || !execution.isConfirmed}

@@ -17,8 +17,8 @@ import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import CardActions from "@material-ui/core/CardActions";
 import ColorSelector from "./ColorSelector";
-import useSchedule, { IScheduleItem } from "./useSchedule";
-import useProviders from "../store/useProviders";
+import useSchedule, { IExecutionStatus } from "./useSchedule";
+import useProviders from "../store/useProviders.old";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
 import { parseISO, isValid } from "date-fns";
@@ -65,7 +65,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const DEFAULT_FIELDS: Partial<IScheduleItem> = {
+const DEFAULT_FIELDS: Partial<IExecutionStatus> = {
   cronFields: DEFAULT_CRON_FIELD,
   cronQuantity: "0",
 };
@@ -73,7 +73,7 @@ const DEFAULT_FIELDS: Partial<IScheduleItem> = {
 const ScheduleForm = () => {
   const classes = useStyles();
 
-  const [fields, setFields] = useState<Partial<IScheduleItem> | null>(
+  const [fields, setFields] = useState<Partial<IExecutionStatus> | null>(
     DEFAULT_FIELDS
   );
   const [alerts, setAlerts] = useState<
@@ -177,7 +177,7 @@ const ScheduleForm = () => {
   const providerPlans =
     Object.values(providers).find(
       (provider) => provider.id === fields?.providerId
-    )?.plans ?? [];
+    )?.plansPurchaseStatus ?? [];
 
   const validateForm = () => {
     const isValid =
@@ -215,7 +215,7 @@ const ScheduleForm = () => {
       const scheduleItem = {
         ...fields,
         network: connectedToNetwork!,
-      } as IScheduleItem;
+      } as IExecutionStatus;
       const selectedContract = contracts[fields!.contractId!];
 
       const alerts = await validateSchedule(
@@ -250,7 +250,7 @@ const ScheduleForm = () => {
     const scheduleItem = {
       ...fields,
       network: connectedToNetwork!,
-    } as IScheduleItem;
+    } as IExecutionStatus;
     const selectedContract = contracts[fields!.contractId!];
 
     scheduleAndSave(
@@ -480,20 +480,22 @@ const ScheduleForm = () => {
                   onChange={handleFieldChange("providerPlanIndex")}
                 >
                   <MenuItem disabled>None</MenuItem>
-                  {providerPlans.map((plan) => (
+                  {providerPlans.map((planPurchaseStatus) => (
                     <MenuItem
-                      key={`schedule-provider-plan-${fields?.providerId}-${plan.index}`}
-                      value={`${plan.index}`}
+                      key={`schedule-provider-plan-${fields?.providerId}-${planPurchaseStatus.plan.index}`}
+                      value={`${planPurchaseStatus.plan.index}`}
                     >
-                      <span style={{ fontWeight: "bold" }}>{`#${
-                        plan.index + 1
-                      }`}</span>
+                      <span
+                        style={{ fontWeight: "bold" }}
+                      >{`#${planPurchaseStatus.plan.index
+                        .add(1)
+                        .toString()}`}</span>
                       <span
                         style={{ marginLeft: 8 }}
                       >{`Window: ${fromBigNumberToHms(
-                        plan.window
+                        planPurchaseStatus.plan.window
                       )} - Gas limit: ${formatBigNumber(
-                        plan.gasLimit,
+                        planPurchaseStatus.plan.gasLimit,
                         0
                       )}`}</span>
                     </MenuItem>

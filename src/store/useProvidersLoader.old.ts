@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import useConnector from "../connect/useConnector";
 import environment from "../shared/environment";
 import { ENetwork } from "../shared/types";
-import useProviders, { IProvider } from "./useProviders";
+import useProviders, { IProvider } from "./useProviders.old";
 
 const useProvidersLoader = () => {
   const [isConnected, isLoading, signer] = useConnector((state) => [
@@ -19,16 +19,18 @@ const useProvidersLoader = () => {
 
     const providers: IProvider[] = [];
 
-    environment.SCHEDULER_PROVIDERS.forEach((address, index) => {
+    environment.SCHEDULER_PROVIDERS_TESTNET.forEach((address, index) => {
       providers.push({
         id: `${ENetwork.RSKTestnet}-${address}`,
         name: `RIF Provider #${index + 1}`,
         network: ENetwork.RSKTestnet,
         address,
-        contractInstance: new RIFScheduler(address, signer as any, {
-          supportedER677Tokens: environment.ER677_TOKENS,
+        rifScheduler: new RIFScheduler({
+          contractAddress: address,
+          providerOrSigner: signer as any,
+          supportedERC677Tokens: environment.ER677_TOKENS,
         }),
-        plans: [],
+        plansPurchaseStatus: [],
       });
     });
 

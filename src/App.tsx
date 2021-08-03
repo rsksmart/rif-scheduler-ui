@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import React, { useRef } from "react";
 import { ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import theme from "./assets/theme";
@@ -15,15 +15,11 @@ import Contracts from "./contracts/Contracts";
 import Connect from "./connect/Connect";
 import useConnector from "./connect/useConnector";
 import Account from "./connect/Account";
-import useProvidersLoader from "./store/useProvidersLoader";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 import Home from "./home/Home";
+import { useConfirmationsNotifier } from "./sdk-hooks/useConfirmationsNotifier";
 
 function App() {
-  const isConnected = useConnector((state) => state.isConnected);
-
-  useProvidersLoader();
-
   const notistackRef = useRef<any>(null);
 
   return (
@@ -35,55 +31,86 @@ function App() {
           vertical: "top",
           horizontal: "left",
         }}
-        autoHideDuration={1000}
         ref={notistackRef}
       >
         <UnsupportedNetworkAlert />
-        <Router>
-          {!isConnected && <PublicRoutes />}
-          {isConnected && <ConnectedRoutes />}
-        </Router>
+        <Routes />
       </SnackbarProvider>
     </ThemeProvider>
   );
 }
 
-const PublicRoutes = () => {
+const Routes = () => {
+  const isConnected = useConnector((state) => state.isConnected);
+
+  useConfirmationsNotifier();
+
   return (
-    <Switch>
-      <Route exact path="/connect">
-        <Connect />
-      </Route>
-      <Route path="*">
-        <Redirect to="/connect" />
-      </Route>
-    </Switch>
+    <Router>
+      <Switch>
+        <Route exact path="/connect">
+          <Connect />
+        </Route>
+        <ConnectedRoute
+          exact
+          path="/"
+          isConnected={isConnected}
+          component={Home}
+        />
+        <ConnectedRoute
+          exact
+          path="/schedule"
+          isConnected={isConnected}
+          component={Schedule}
+        />
+        <ConnectedRoute
+          exact
+          path="/store"
+          isConnected={isConnected}
+          component={Store}
+        />
+        <ConnectedRoute
+          exact
+          path="/contracts"
+          isConnected={isConnected}
+          component={Contracts}
+        />
+        <ConnectedRoute
+          exact
+          path="/account"
+          isConnected={isConnected}
+          component={Account}
+        />
+        <Route path="*">
+          <Redirect to="/" />
+        </Route>
+      </Switch>
+    </Router>
   );
 };
 
-const ConnectedRoutes = () => {
-  return (
-    <Switch>
-      <Route exact path="/">
-        <Home />
-      </Route>
-      <Route exact path="/schedule">
-        <Schedule />
-      </Route>
-      <Route exact path="/store">
-        <Store />
-      </Route>
-      <Route exact path="/contracts">
-        <Contracts />
-      </Route>
-      <Route exact path="/account">
-        <Account />
-      </Route>
-      <Route path="*">
-        <Redirect to="/" />
-      </Route>
-    </Switch>
-  );
-};
+const ConnectedRoute: React.FC<{
+  isConnected: boolean;
+  exact: boolean;
+  component: any;
+  path: string;
+}> = ({ isConnected, exact, path, component: Component }) => (
+  <Route
+    exact={exact}
+    path={path}
+    render={(props) =>
+      isConnected ? (
+        <Component {...props} />
+      ) : (
+        <Redirect
+          to={{
+            pathname: "/connect",
+            state: { from: props.location },
+          }}
+        />
+      )
+    }
+  />
+);
 
 export default App;

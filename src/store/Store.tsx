@@ -4,11 +4,10 @@ import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
-import useProviders from "./useProviders";
-import Loading from "../shared/Loading";
 import NetworkLabel from "../connect/NetworkLabel";
-import { Divider } from "@material-ui/core";
-import Providers from "./Providers";
+import PlansList from "./PlansList";
+import { useProviders } from "../sdk-hooks/useProviders";
+import React, { memo } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -19,21 +18,15 @@ const useStyles = makeStyles((theme: Theme) =>
       width: "100%",
       maxWidth: 800,
       borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0
+      borderBottomRightRadius: 0,
     },
-    divider: {
-      width: "100%",
-      maxWidth: 800,
-    }
   })
 );
 
-const Store = () => {
+const Store = memo(() => {
   const classes = useStyles();
 
-  const isLoading = useProviders(
-    (state) => state.isLoading
-  );
+  const providers = useProviders();
 
   return (
     <Layout>
@@ -45,20 +38,19 @@ const Store = () => {
           </Typography>
         </CardContent>
       </Card>
-      <Divider className={classes.divider} />
-
-      <div
-        className={classes.root}
-        style={{
-          //marginTop: 15,
-        }}
-      >
-        <Providers />
+      <div className={classes.root}>
+        <Card style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+          {providers.map((provider, index) => (
+            <PlansList
+              key={`plans-list-${index}`}
+              expandedFixed={providers.length === 1}
+              provider={provider}
+            />
+          ))}
+        </Card>
       </div>
-
-      <Loading isLoading={isLoading} />
     </Layout>
   );
-};
+});
 
 export default Store;

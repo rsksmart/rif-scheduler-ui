@@ -5,14 +5,15 @@ import {
   Theme,
 } from "@material-ui/core/styles";
 import LinearProgress from "@material-ui/core/LinearProgress";
+import { Divider } from "@material-ui/core";
 import { memo } from "react";
-import { useDelayMount } from "./useDelayMount";
+import { useDelayMount } from "../shared/useDelayMount";
 
 const BorderLinearProgress = withStyles((theme: Theme) =>
   createStyles({
     root: {
-      height: 10,
-      borderRadius: 5,
+      height: 2,
+      borderRadius: 0,
     },
     colorPrimary: {
       backgroundColor:
@@ -29,8 +30,11 @@ const useStyles = makeStyles({
   root: {
     width: "100%",
     maxWidth: 800,
-    marginTop: 2.5,
-    marginBottom: 2.5,
+  },
+  divider: {
+    height: 2,
+    width: "100%",
+    maxWidth: 800,
   },
 });
 
@@ -44,7 +48,7 @@ const Loading: React.FC<{ isLoading: boolean }> = memo(({ isLoading }) => {
   return (
     <div className={classes.root}>
       {loadingResult && <BorderLinearProgress variant="indeterminate" />}
-      {!loadingResult && <div style={{ height: 10 }} />}
+      {!loadingResult && <Divider className={classes.divider} />}
     </div>
   );
 });

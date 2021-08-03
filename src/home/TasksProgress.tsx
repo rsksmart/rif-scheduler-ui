@@ -11,7 +11,7 @@ import {
 import HelpIcon from "@material-ui/icons/Help";
 import ReadyIcon from "@material-ui/icons/CheckCircle";
 import useConnector from "../connect/useConnector";
-import useProviders from "../store/useProviders";
+import useProviders from "../store/useProviders.old";
 import { Link as RouterLink } from "react-router-dom";
 import useContracts from "../contracts/useContracts";
 import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
@@ -71,7 +71,7 @@ const TasksProgress = ({ className, ...rest }: any) => {
 
   const resultExecutionsLeft = networkProviders.reduce(
     (accumulated, [id, provider]) => {
-      const providerExecutionsLeft = provider.plans.reduce(
+      const providerExecutionsLeft = provider.plansPurchaseStatus.reduce(
         executionsLeft,
         BIG_ZERO
       );

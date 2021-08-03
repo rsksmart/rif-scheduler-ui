@@ -460,7 +460,9 @@ const CronButton: React.FC<ICronButtonProps> = ({
                     {Array.from(Array(12).keys())
                       .reverse()
                       .map((value) => (
-                        <MenuItem value={value + 1}>{value + 1}</MenuItem>
+                        <MenuItem key={`cron-hour-${value}`} value={value + 1}>
+                          {value + 1}
+                        </MenuItem>
                       ))}
                   </Select>
                 </FormControl>
@@ -483,7 +485,7 @@ const CronButton: React.FC<ICronButtonProps> = ({
                     {Array.from(Array(60).keys())
                       .filter((x) => x % 5 === 0)
                       .map((value) => (
-                        <MenuItem value={value}>
+                        <MenuItem key={`cron-minute-${value}`} value={value}>
                           {value.toString().padStart(2, "0")}
                         </MenuItem>
                       ))}

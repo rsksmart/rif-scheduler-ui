@@ -10,9 +10,9 @@ import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import Divider from "@material-ui/core/Divider";
-import useSchedule, { IScheduleItem } from "./useSchedule";
+import useSchedule, { IExecutionStatus } from "./useSchedule";
 import { format, parseISO, compareAsc } from "date-fns";
-import useProviders, { IProvider } from "../store/useProviders";
+import useProviders, { IProvider } from "../store/useProviders.old";
 import useContracts, { IContract } from "../contracts/useContracts";
 import HistoryIcon from "@material-ui/icons/History";
 import UpcomingIcon from "@material-ui/icons/AlarmOn";
@@ -52,7 +52,7 @@ const useRowStyles = makeStyles((theme: Theme) =>
 );
 
 const Item: React.FC<{
-  item: IScheduleItem;
+  item: IExecutionStatus;
   contract?: IContract;
   provider?: IProvider;
   onClick?: (executionId: string) => void;
@@ -113,7 +113,7 @@ const Item: React.FC<{
 };
 
 interface IGroupBy {
-  [group: string]: IScheduleItem[];
+  [group: string]: IExecutionStatus[];
 }
 
 const History = () => {
