@@ -5,7 +5,7 @@ import { IProviderSnapshot } from "./useProviders";
 import shallow from "zustand/shallow";
 import create from "zustand";
 
-export interface IUseSchedulerStore {
+export interface IUsePlansStore {
   plans: {
     [providerAddress: string]: {
       [index: string]: IPlanSnapshot;
@@ -14,7 +14,7 @@ export interface IUseSchedulerStore {
   setPlan: (plan: IPlanSnapshot) => void;
 }
 
-export const useSchedulerStore = create<IUseSchedulerStore>((set, get) => ({
+export const usePlansStore = create<IUsePlansStore>((set, get) => ({
   plans: {},
   setPlan: (plan: IPlanSnapshot) => {
     const providerAddress = plan.ref.config.contractAddress;
@@ -31,17 +31,14 @@ export const useSchedulerStore = create<IUseSchedulerStore>((set, get) => ({
   },
 }));
 
-export const useScheduler = (provider: IProviderSnapshot) => {
+export const usePlans = (provider: IProviderSnapshot) => {
   const scheduler = useMemo(
     () => new RIFScheduler(provider.config),
     [provider]
   );
 
-  const [plans, setPlan] = useSchedulerStore(
-    (store) => [
-      Object.values(store.plans[provider.config.contractAddress] ?? []),
-      store.setPlan,
-    ],
+  const [plans, setPlan] = usePlansStore(
+    (store) => [store.plans[provider.config.contractAddress], store.setPlan],
     shallow
   );
 
@@ -53,5 +50,5 @@ export const useScheduler = (provider: IProviderSnapshot) => {
     plansSnapshots.forEach(setPlan);
   }, [scheduler, setPlan]);
 
-  return [plans, loadPlans] as const;
+  return [Object.values(plans ?? []), loadPlans] as const;
 };

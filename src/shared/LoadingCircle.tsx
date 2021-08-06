@@ -9,6 +9,8 @@ const useCircleStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       position: "relative",
+      width: 24,
+      height: 24,
     },
     bottom: {
       color: theme.palette.grey[theme.palette.type === "light" ? 200 : 700],

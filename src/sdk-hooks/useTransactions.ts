@@ -19,6 +19,8 @@ export interface ITransaction {
   status: ETransactionStatus;
   confirmMessage: string;
   failMessage: string;
+  startedAt: string;
+  errorMessage?: string;
 }
 
 export interface IUseTransactionsStore {
@@ -29,7 +31,8 @@ export interface IUseTransactionsStore {
   changeStatus: (
     key: string,
     txHash: string,
-    status: ETransactionStatus
+    status: ETransactionStatus,
+    errorMessage?: string
   ) => void;
 }
 
@@ -52,7 +55,8 @@ export const useTransactionsStore = create<IUseTransactionsStore>(
       changeStatus: (
         key: string,
         txHash: string,
-        status: ETransactionStatus
+        status: ETransactionStatus,
+        errorMessage?: string
       ) => {
         let transactionToChange = (get().transactions[key] ?? []).find(
           (x) => x.hash === txHash
@@ -60,6 +64,7 @@ export const useTransactionsStore = create<IUseTransactionsStore>(
 
         if (transactionToChange) {
           transactionToChange.status = status;
+          transactionToChange.errorMessage = errorMessage;
 
           const result = (get().transactions[key] ?? []).filter(
             (x) => x.hash !== txHash
@@ -103,6 +108,7 @@ export const useTransactions = (key: string) => {
         status: ETransactionStatus.Idle,
         confirmMessage,
         failMessage,
+        startedAt: new Date().toISOString(),
       });
     },
     [connectedToNetwork, key, registerIntoStore]

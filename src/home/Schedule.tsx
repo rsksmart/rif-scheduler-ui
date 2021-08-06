@@ -11,8 +11,7 @@ import {
 import ScheduleIcon from "@material-ui/icons/EventAvailable";
 import useConnector from "../connect/useConnector";
 import { Link as RouterLink } from "react-router-dom";
-import useSchedule from "../schedule/useSchedule";
-import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { useIndexedExecutionsStore } from "../sdk-hooks/useExecutions";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -30,12 +29,12 @@ const Schedule = ({ className, ...rest }: any) => {
 
   const connectedToNetwork = useConnector((state) => state.network);
 
-  const scheduledExecutions = useSchedule((state) => state.scheduleItems);
+  const indexedExecutions = useIndexedExecutionsStore(
+    (state) => state.indexedExecutions
+  );
 
-  const networkScheduledExecutions = Object.entries(scheduledExecutions).filter(
-    ([id, execution]) =>
-      execution.network === connectedToNetwork &&
-      execution.state === EExecutionState.Scheduled
+  const networkScheduledExecutions = Object.values(indexedExecutions).filter(
+    (index) => index.network === connectedToNetwork
   );
 
   return (

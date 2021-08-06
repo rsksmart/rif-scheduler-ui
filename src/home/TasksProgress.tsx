@@ -11,10 +11,12 @@ import {
 import HelpIcon from "@material-ui/icons/Help";
 import ReadyIcon from "@material-ui/icons/CheckCircle";
 import useConnector from "../connect/useConnector";
-import useProviders from "../store/useProviders.old";
 import { Link as RouterLink } from "react-router-dom";
 import useContracts from "../contracts/useContracts";
-import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
+import { BIG_ZERO } from "../shared/reduceExecutionsLeft";
+import { useProvidersStore } from "../sdk-hooks/useProviders";
+import { getExecutionsLeftTotal } from "../sdk-hooks/getExecutionsLeftTotal";
+import { useEffect, useState } from "react";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -63,23 +65,16 @@ const TasksProgress = ({ className, ...rest }: any) => {
 
   const connectedToNetwork = useConnector((state) => state.network);
 
-  const providers = useProviders((state) => state.providers);
+  const [executionsLeft, setExecutionsLeft] = useState(BIG_ZERO);
+  const providers = useProvidersStore((state) => state.providers);
 
-  const networkProviders = Object.entries(providers).filter(
-    ([id, provider]) => provider.network === connectedToNetwork
-  );
-
-  const resultExecutionsLeft = networkProviders.reduce(
-    (accumulated, [id, provider]) => {
-      const providerExecutionsLeft = provider.plansPurchaseStatus.reduce(
-        executionsLeft,
-        BIG_ZERO
+  useEffect(() => {
+    for (const provider of providers) {
+      getExecutionsLeftTotal(provider).then((total) =>
+        setExecutionsLeft((prev) => prev.add(total))
       );
-
-      return accumulated.add(providerExecutionsLeft);
-    },
-    BIG_ZERO
-  );
+    }
+  }, [providers]);
 
   const contracts = useContracts((state) => state.contracts);
   const networkContracts = Object.entries(contracts).filter(
@@ -87,7 +82,7 @@ const TasksProgress = ({ className, ...rest }: any) => {
   );
 
   let currentTask = ETask.ReadyToSchedule;
-  if (resultExecutionsLeft.lte(BIG_ZERO)) {
+  if (executionsLeft.lte(BIG_ZERO)) {
     currentTask = ETask.PurchaseExecutions;
   } else if (networkContracts.length <= 0) {
     currentTask = ETask.RegisterContracts;

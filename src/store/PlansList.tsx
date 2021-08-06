@@ -10,10 +10,10 @@ import AccordionDetails from "@material-ui/core/AccordionDetails";
 import AccordionSummary from "@material-ui/core/AccordionSummary";
 import Typography from "@material-ui/core/Typography";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
-import { BIG_ZERO, executionsLeft2 } from "../shared/reduceExecutionsLeft";
+import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
 import Chip from "@material-ui/core/Chip";
 import { IProviderSnapshot } from "../sdk-hooks/useProviders";
-import { useScheduler } from "../sdk-hooks/useScheduler";
+import { usePlans } from "../sdk-hooks/usePlans";
 import Loading from "./Loading";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -54,7 +54,7 @@ const PlansList: React.FC<{
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [plans, loadPlans] = useScheduler(provider);
+  const [plans, loadPlans] = usePlans(provider);
 
   useEffect(() => {
     setIsLoading(true);
@@ -94,10 +94,7 @@ const PlansList: React.FC<{
               </Typography>
               <Typography className={classes.expanderSecondaryHeading}>
                 {`${formatBigNumber(
-                  plans.reduce(
-                    (total, plan) => executionsLeft2(total, plan),
-                    BIG_ZERO
-                  ),
+                  plans.reduce(executionsLeft, BIG_ZERO),
                   0
                 )} executions left`}
               </Typography>

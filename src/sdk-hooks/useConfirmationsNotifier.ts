@@ -10,11 +10,12 @@ import {
   ITransaction,
   useTransactionsStore,
 } from "./useTransactions";
+import { getMessageFromCode } from "eth-rpc-errors";
 
 export interface IConfirmationsNotifierConfig {
   provider: providers.Provider;
   onConfirmed: ((txHash: string) => void) | undefined;
-  onFailed: ((txHash: string, error: Error) => void) | undefined;
+  onFailed: ((txHash: string, error: any) => void) | undefined;
   onCompleted?: ((txHash: string) => void) | undefined;
   tx: ITransaction;
 }
@@ -88,8 +89,10 @@ export const useConfirmationsNotifier = () => {
               variant: "success",
             });
           },
-          onFailed: () => {
-            changeStatus(key, tx.hash, ETransactionStatus.Failed);
+          onFailed: (_, error) => {
+            const message = getMessageFromCode(error.code, error.message);
+
+            changeStatus(key, tx.hash, ETransactionStatus.Failed, message);
             enqueueSnackbar(tx.failMessage, {
               variant: "error",
             });

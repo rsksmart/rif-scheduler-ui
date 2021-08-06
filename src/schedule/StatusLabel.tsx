@@ -2,7 +2,7 @@ import Chip from "@material-ui/core/Chip";
 import { ExecutionStateDescriptions } from "../shared/types";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
-import { IExecutionStatus } from "./useSchedule";
+import { IExecutionSnapshot } from "../sdk-hooks/useExecution";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,17 +44,14 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const StatusLabel = ({
-  execution,
-  isLoading,
-}: {
-  execution: IExecutionStatus;
+const StatusLabel: React.FC<{
+  execution: IExecutionSnapshot;
   isLoading?: boolean;
-}) => {
+  isConfirmed?: boolean;
+}> = ({ execution, isLoading, isConfirmed }) => {
   const classes = useStyles();
 
   const state = execution.state ?? EExecutionState.NotScheduled;
-  const isConfirmed = execution.isConfirmed;
 
   const label = isLoading
     ? "..."

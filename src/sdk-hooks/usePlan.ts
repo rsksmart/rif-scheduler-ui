@@ -1,7 +1,7 @@
 import { Plan, TokenType } from "@rsksmart/rif-scheduler-sdk";
 import { BigNumber, BigNumberish } from "ethers";
 import { useCallback, useEffect, useState } from "react";
-import { useSchedulerStore } from "./useScheduler";
+import { usePlansStore } from "./usePlans";
 import { useTransactions } from "./useTransactions";
 
 export interface IPlanSnapshot {
@@ -49,7 +49,7 @@ export const usePlan = (plan: Plan) => {
 
   const [isConfirmed, setIsConfirmed] = useState<boolean>(true);
 
-  const setPlan = useSchedulerStore((state) => state.setPlan);
+  const setPlan = usePlansStore((state) => state.setPlan);
 
   const [pendingTransactions, registerTx] = useTransactions(key);
 

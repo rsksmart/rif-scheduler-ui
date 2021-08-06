@@ -1,8 +1,7 @@
 import { Contract, utils } from "ethers";
 import { providers } from "ethers";
 import { addSeconds, differenceInMinutes, subSeconds } from "date-fns";
-import { IExecutionStatus } from "../schedule/useSchedule";
-import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { EExecutionState, Execution } from "@rsksmart/rif-scheduler-sdk";
 
 const PROMISE_PARALLEL_NUMBER = 4 * 4;
 
@@ -18,17 +17,20 @@ export interface IExecutedTransaction {
 }
 
 const getExecutedTransaction = async (
-  contractAddress: string,
-  provider: providers.Provider,
-  window: number,
-  execution: IExecutionStatus
+  scheduledTxHash: string,
+  execution: Execution
 ) => {
+  const provider = execution.provider as any;
+  const contractAddress = execution.config.contractAddress;
+  const window = execution.plan.window.toNumber();
+
+  const state = await execution.getState();
+
   if (
-    !execution.id ||
     ![
       EExecutionState.ExecutionSuccessful,
       EExecutionState.ExecutionFailed,
-    ].includes(execution.state ?? EExecutionState.NotScheduled)
+    ].includes(state)
   ) {
     return null;
   }
@@ -46,7 +48,7 @@ const getExecutedTransaction = async (
 
   const executeAt = new Date(execution.executeAt);
 
-  const scheduledTx = await provider.getTransaction(execution.scheduledTx!);
+  const scheduledTx = await provider.getTransaction(scheduledTxHash);
 
   const scheduledBlockNumber = scheduledTx.blockNumber!;
   const lastBlockNumber = await provider.getBlockNumber();
@@ -140,7 +142,7 @@ const getEventIfExist = async (
   provider: providers.Provider,
   blockNumber: number,
   contractAddress: string,
-  execution: IExecutionStatus
+  execution: Execution
 ): Promise<IExecutedTransaction | null> => {
   const abi = [
     "event Executed(bytes32 indexed id, bool success, bytes result)",
@@ -148,9 +150,9 @@ const getEventIfExist = async (
   const eventInterface = new utils.Interface(abi);
   const rifSchedulerContract = new Contract(contractAddress, abi, provider);
 
-  const executeId = execution.id?.substr(2);
+  const executeId = execution.getId().substr(2);
   const filterByExecutionId = rifSchedulerContract.filters.Executed(
-    execution.id
+    execution.getId()
   );
   const filterTopics = filterByExecutionId.topics as string[];
 

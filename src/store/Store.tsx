@@ -6,8 +6,8 @@ import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
 import NetworkLabel from "../connect/NetworkLabel";
 import PlansList from "./PlansList";
-import { useProviders } from "../sdk-hooks/useProviders";
-import React, { memo } from "react";
+import { useProvidersStore } from "../sdk-hooks/useProviders";
+import { memo } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const Store = memo(() => {
   const classes = useStyles();
 
-  const providers = useProviders();
+  const providers = useProvidersStore((state) => state.providers);
 
   return (
     <Layout>

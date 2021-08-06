@@ -1,10 +1,12 @@
-function shortText(address: string): string {
-    return address
+function shortText(address?: string): string {
+  if (!address) return "";
+
+  return address
     ? `${address.substr(0, 6)}...${address.substr(
         address.length - 4,
         address.length
-        )}`
-    : address
+      )}`
+    : address;
 }
 
-export default shortText
+export default shortText;

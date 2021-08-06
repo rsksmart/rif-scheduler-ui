@@ -18,9 +18,12 @@ import Account from "./connect/Account";
 import UnsupportedNetworkAlert from "./connect/UnsupportedNetworkAlert";
 import Home from "./home/Home";
 import { useConfirmationsNotifier } from "./sdk-hooks/useConfirmationsNotifier";
+import { useProvidersLoader } from "./sdk-hooks/useProviders";
 
 function App() {
   const notistackRef = useRef<any>(null);
+
+  useProvidersLoader();
 
   return (
     <ThemeProvider theme={theme}>

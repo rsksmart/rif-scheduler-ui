@@ -1,6 +1,7 @@
-import { Config } from "@rsksmart/rif-scheduler-sdk/dist/model/Base";
+import { Config } from "@rsksmart/rif-scheduler-sdk/dist/Base";
 import { Signer } from "ethers";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import create from "zustand";
 import useConnector from "../connect/useConnector";
 import environment from "../shared/environment";
 import { ENetwork } from "../shared/types";
@@ -10,6 +11,20 @@ export interface IProviderSnapshot {
   network: ENetwork;
   config: Config;
 }
+
+export interface IUseProvidersStore {
+  providers: IProviderSnapshot[];
+  setProviders: (providers: IProviderSnapshot[]) => void;
+}
+
+export const useProvidersStore = create<IUseProvidersStore>((set, get) => ({
+  providers: [],
+  setProviders: (providers: IProviderSnapshot[]) => {
+    set((state) => ({
+      providers,
+    }));
+  },
+}));
 
 export const createProviderSnapshot = (
   index: number,
@@ -28,7 +43,7 @@ export const createProviderSnapshot = (
   };
 };
 
-export const useProviders = () => {
+export const useProvidersLoader = () => {
   const [isConnected, network, isLoading, signer] = useConnector((state) => [
     state.isConnected,
     state.network,
@@ -36,7 +51,7 @@ export const useProviders = () => {
     state.signer,
   ]);
 
-  const [snapshots, setSnapshots] = useState<IProviderSnapshot[]>([]);
+  const setProviders = useProvidersStore((state) => state.setProviders);
 
   useEffect(() => {
     if (
@@ -58,8 +73,6 @@ export const useProviders = () => {
       createProviderSnapshot(index, address, network, signer)
     );
 
-    setSnapshots(providers);
-  }, [isConnected, network, isLoading, signer]);
-
-  return snapshots;
+    setProviders(providers);
+  }, [isConnected, network, isLoading, signer, setProviders]);
 };

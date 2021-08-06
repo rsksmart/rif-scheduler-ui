@@ -28,7 +28,7 @@ import { IconButton, InputAdornment, TextField } from "@material-ui/core";
 import NumberInput from "../shared/NumberInput";
 import PlusIcon from "@material-ui/icons/AddCircleRounded";
 import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
-import { TokenType } from "@rsksmart/rif-scheduler-sdk/dist/model/token";
+import { TokenType } from "@rsksmart/rif-scheduler-sdk/dist/token";
 import { useSnackbar } from "notistack";
 import { getMessageFromCode } from "eth-rpc-errors";
 
