@@ -69,11 +69,7 @@ const TasksProgress = ({ className, ...rest }: any) => {
   const providers = useProvidersStore((state) => state.providers);
 
   useEffect(() => {
-    for (const provider of providers) {
-      getExecutionsLeftTotal(provider).then((total) =>
-        setExecutionsLeft((prev) => prev.add(total))
-      );
-    }
+    getExecutionsLeftTotal(providers).then((total) => setExecutionsLeft(total));
   }, [providers]);
 
   const contracts = useContracts((state) => state.contracts);

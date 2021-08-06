@@ -53,6 +53,19 @@ const defaultDate = () =>
     new Date().getDate()
   );
 
+const defaultHistoryOption = () => {
+  const option = JSON.parse(
+    localStorage.getItem("DEFAULT_HISTORY_OPTION") ?? ""
+  ) as EHistoryOption;
+  return [
+    EHistoryOption.Month,
+    EHistoryOption.Year,
+    EHistoryOption.Schedule,
+  ].includes(option)
+    ? option
+    : EHistoryOption.Month;
+};
+
 const PAGE_SIZE = 20;
 
 const History = () => {
@@ -66,7 +79,7 @@ const History = () => {
   const connectedToNetwork = useConnector((state) => state.network);
 
   const [historyOption, setHistoryOption] = useState<EHistoryOption>(
-    EHistoryOption.Month
+    defaultHistoryOption()
   );
 
   const [executions, loadExecutions] = useExecutions();
@@ -218,8 +231,15 @@ const History = () => {
                 <Select
                   value={historyOption}
                   onChange={(event) => {
-                    setHistoryOption(event.target.value as EHistoryOption);
+                    const option = event.target.value as EHistoryOption;
+
+                    setHistoryOption(option);
                     handleClear();
+
+                    localStorage.setItem(
+                      "DEFAULT_HISTORY_OPTION",
+                      option.toString()
+                    );
                   }}
                 >
                   <MenuItem value={EHistoryOption.Month}>Month</MenuItem>
