@@ -312,14 +312,13 @@ const useSchedule = create<IUseSchedule>(
           myAccountAddress
         );
 
-        let scheduledExecutionTransaction: ContractTransaction | undefined =
-          undefined;
+        let scheduledExecutionTransaction: ContractTransaction;
 
         if (scheduleItem.isRecurrent) {
           scheduledExecutionTransaction =
             (await provider.contractInstance.scheduleMany(
               execution,
-              scheduleItem.cronFields?.expression!,
+              scheduleItem.cronFields!.expression,
               scheduleItem.cronQuantity!
             )) as any;
         } else {
