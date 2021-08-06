@@ -55,7 +55,7 @@ const defaultDate = () =>
 
 const defaultHistoryOption = () => {
   const option = JSON.parse(
-    localStorage.getItem("DEFAULT_HISTORY_OPTION") ?? ""
+    localStorage.getItem("DEFAULT_HISTORY_OPTION") ?? "0"
   ) as EHistoryOption;
   return [
     EHistoryOption.Month,
