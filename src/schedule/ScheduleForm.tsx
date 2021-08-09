@@ -339,6 +339,8 @@ const ScheduleForm = () => {
                 style={{
                   marginTop: 8,
                   marginBottom: 4,
+                  marginRight: 0,
+                  marginLeft: 0,
                 }}
                 control={
                   <Switch
