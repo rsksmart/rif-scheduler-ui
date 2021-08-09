@@ -86,8 +86,8 @@ const Account = () => {
             <ListItem
               button
               onClick={() => {
-                history.replace("/");
                 disconnect();
+                history.replace("/");
               }}
             >
               <ListItemIcon>

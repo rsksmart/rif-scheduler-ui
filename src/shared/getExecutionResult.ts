@@ -3,6 +3,8 @@ import { providers } from "ethers";
 import { addSeconds, differenceInMinutes, subSeconds } from "date-fns";
 import { EExecutionState, Execution } from "@rsksmart/rif-scheduler-sdk";
 
+// PROMISE_PARALLEL_NUMBER needs to be a multiple of 4,
+// because the getExecutedTransactions throws 4 threads simultaneously each iteration
 const PROMISE_PARALLEL_NUMBER = 4 * 4;
 
 export interface IExecutedEventInfo {
@@ -34,8 +36,6 @@ const getExecutedTransaction = async (
   ) {
     return null;
   }
-
-  console.time("getExecutionResult");
 
   const blocksProcessed: number[] = [];
   const addProcess = (initialBlock: number, offset: number) => {
@@ -172,8 +172,7 @@ const getEventIfExist = async (
     if (log) {
       const result: IExecutedEventInfo = eventInterface.parseLog(log)
         .args as any;
-      console.timeEnd("getExecutionResult");
-      console.log("getExecutionResult", result);
+
       return {
         event: result,
         txHash: tx.hash,
