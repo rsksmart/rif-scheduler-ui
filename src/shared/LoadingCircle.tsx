@@ -2,11 +2,15 @@ import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import CircularProgress, {
   CircularProgressProps,
 } from "@material-ui/core/CircularProgress";
+import { memo } from "react";
+import { useDelayMount } from "./useDelayMount";
 
 const useCircleStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       position: "relative",
+      width: 24,
+      height: 24,
     },
     bottom: {
       color: theme.palette.grey[theme.palette.type === "light" ? 200 : 700],
@@ -51,13 +55,19 @@ const CustomCircularProgress = (props: CircularProgressProps) => {
   );
 };
 
-const LoadingCircle = ({ isLoading }: any) => {
-  return (
-    <>
-      {isLoading && <CustomCircularProgress />}
-      {!isLoading && <div style={{ height: 24 }} />}
-    </>
-  );
-};
+const LoadingCircle: React.FC<{ isLoading: boolean }> = memo(
+  ({ isLoading }) => {
+    const mounted = useDelayMount(330);
+
+    const loadingResult = mounted && isLoading;
+
+    return (
+      <>
+        {loadingResult && <CustomCircularProgress />}
+        {!loadingResult && <div style={{ height: 24 }} />}
+      </>
+    );
+  }
+);
 
 export default LoadingCircle;

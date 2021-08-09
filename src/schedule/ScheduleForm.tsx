@@ -8,7 +8,7 @@ import {
   MuiPickersUtilsProvider,
   KeyboardDateTimePicker,
 } from "@material-ui/pickers";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 import FormControl from "@material-ui/core/FormControl";
@@ -17,8 +17,6 @@ import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import CardActions from "@material-ui/core/CardActions";
 import ColorSelector from "./ColorSelector";
-import useSchedule, { IScheduleItem } from "./useSchedule";
-import useProviders from "../store/useProviders";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
 import { parseISO, isValid } from "date-fns";
@@ -45,7 +43,18 @@ import NumberInput from "../shared/NumberInput";
 import PlusIcon from "@material-ui/icons/AddCircleRounded";
 import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
 import CronButton from "./CronButton";
-import { DEFAULT_CRON_FIELD } from "./cronParser/convertToCronExpression";
+import {
+  DEFAULT_CRON_FIELD,
+  ICronField,
+} from "./cronParser/convertToCronExpression";
+import {
+  IProviderSnapshot,
+  useProvidersStore,
+} from "../sdk-hooks/useProviders";
+import { validateBeforeSchedule } from "./validateBeforeSchedule";
+import { usePlans } from "../sdk-hooks/usePlans";
+import { useExecutions } from "../sdk-hooks/useExecutions";
+import { getMessageFromCode } from "eth-rpc-errors";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -65,15 +74,31 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const DEFAULT_FIELDS: Partial<IScheduleItem> = {
+const DEFAULT_FIELDS: Partial<IFormFields> = {
   cronFields: DEFAULT_CRON_FIELD,
   cronQuantity: "0",
 };
 
+export interface IFormFields {
+  title: string;
+  executeAt: string;
+  providerAddress: string;
+  providerPlanIndex: string;
+  contractId: string;
+  contractAction: string;
+  contractFields: string[];
+  color?: string;
+  isRecurrent?: boolean;
+  cronFields?: ICronField;
+  cronQuantity?: string;
+}
+
 const ScheduleForm = () => {
   const classes = useStyles();
 
-  const [fields, setFields] = useState<Partial<IScheduleItem> | null>(
+  const [, , schedule] = useExecutions();
+
+  const [fields, setFields] = useState<Partial<IFormFields> | null>(
     DEFAULT_FIELDS
   );
   const [alerts, setAlerts] = useState<
@@ -82,12 +107,10 @@ const ScheduleForm = () => {
 
   const [cronFieldFocused, setCronFieldFocused] = useState<boolean>(false);
 
-  const [scheduleAndSave, validateSchedule, isLoading] = useSchedule(
-    (state) => [state.scheduleAndSave, state.validateSchedule, state.isLoading],
-    shallow
-  );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const providers = useProviders((state) => state.providers);
+  const providers = useProvidersStore((state) => state.providers);
+
   const contracts = useContracts((state) => state.contracts);
   const [account, connectedToNetwork] = useConnector(
     (state) => [state.account, state.network],
@@ -107,7 +130,7 @@ const ScheduleForm = () => {
     setFields((values) => ({
       ...values,
       contractId: event.target.value,
-      contractMethod: undefined,
+      contractAction: undefined,
       contractFields: undefined,
     }));
   };
@@ -115,7 +138,7 @@ const ScheduleForm = () => {
   const handleMethodChange = (event: any) => {
     setFields((values) => ({
       ...values,
-      contractMethod: event.target.value,
+      contractAction: event.target.value,
       contractFields: undefined,
     }));
   };
@@ -163,30 +186,29 @@ const ScheduleForm = () => {
     ? JSON.parse(contracts[fields.contractId].ABI)
     : null;
 
-  const contractMethods = abi
+  const contractActions = abi
     ? abi.filter((x: any) => x.type === "function")
     : [];
 
   const contractInputs =
-    abi && fields?.contractMethod
+    abi && fields?.contractAction
       ? abi.find(
-          (x: any) => x.type === "function" && x.name === fields.contractMethod
+          (x: any) => x.type === "function" && x.name === fields.contractAction
         )?.inputs
       : undefined;
 
-  const providerPlans =
-    Object.values(providers).find(
-      (provider) => provider.id === fields?.providerId
-    )?.plans ?? [];
+  const selectedProvider = providers.find(
+    (provider) => provider.config.contractAddress === fields?.providerAddress
+  );
 
   const validateForm = () => {
     const isValid =
       fields &&
       fields.title &&
       fields.contractId &&
-      fields.contractMethod &&
+      fields.contractAction &&
       fields.executeAt &&
-      fields.providerId &&
+      fields.providerAddress &&
       fields.providerPlanIndex;
 
     const isValidRecurrence =
@@ -207,7 +229,9 @@ const ScheduleForm = () => {
   };
 
   const handleSchedule = async () => {
-    const provider = providers[fields?.providerId ?? ""];
+    const provider = providers.find(
+      (x) => x.config.contractAddress === fields?.providerAddress
+    );
 
     const isFormValid = validateForm();
 
@@ -215,10 +239,10 @@ const ScheduleForm = () => {
       const scheduleItem = {
         ...fields,
         network: connectedToNetwork!,
-      } as IScheduleItem;
+      } as IFormFields;
       const selectedContract = contracts[fields!.contractId!];
 
-      const alerts = await validateSchedule(
+      const alerts = await validateBeforeSchedule(
         scheduleItem,
         selectedContract,
         provider,
@@ -234,47 +258,51 @@ const ScheduleForm = () => {
   };
 
   const handleScheduleAnyway = () => {
-    const provider = providers[fields?.providerId ?? ""];
-
     const isFormValid = validateForm();
 
-    if (provider && isFormValid) {
+    if (isFormValid) {
       handleScheduleAndSave();
       setAlerts([]);
     }
   };
 
-  const handleScheduleAndSave = () => {
-    const provider = providers[fields?.providerId ?? ""];
+  const handleScheduleAndSave = async () => {
+    const provider = providers.find(
+      (x) => x.config.contractAddress === fields?.providerAddress
+    );
 
-    const scheduleItem = {
-      ...fields,
-      network: connectedToNetwork!,
-    } as IScheduleItem;
-    const selectedContract = contracts[fields!.contractId!];
+    setIsLoading(true);
 
-    scheduleAndSave(
-      scheduleItem,
-      selectedContract,
-      provider,
-      account!,
-      () =>
-        enqueueSnackbar("Schedule confirmed!", {
-          variant: "success",
-        }),
-      (message) =>
-        enqueueSnackbar(message, {
-          variant: "error",
-        })
-    )
-      .then(() => {
-        handleClear();
-      })
-      .catch(() => {
-        enqueueSnackbar("Something went wrong, please try again.", {
-          variant: "warning",
-        });
+    try {
+      await schedule({
+        title: fields!.title!,
+        network: connectedToNetwork!,
+        contractId: fields!.contractId!,
+        contractMethod: fields!.contractAction!,
+        contractFields: fields!.contractFields!,
+        color: fields!.color!,
+        executeAtISO: fields!.executeAt!,
+        providerAddress: provider!.config.contractAddress,
+        providerPlanIndex: fields!.providerPlanIndex!,
+        value: "0",
+        requestor: account!,
+        isRecurrent: fields!.isRecurrent!,
+        cronExpression: fields!.isRecurrent!
+          ? fields!.cronFields!.expression!
+          : undefined,
+        quantity: fields!.isRecurrent! ? fields!.cronQuantity! : undefined,
       });
+
+      handleClear();
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -311,6 +339,8 @@ const ScheduleForm = () => {
                 style={{
                   marginTop: 8,
                   marginBottom: 4,
+                  marginRight: 0,
+                  marginLeft: 0,
                 }}
                 control={
                   <Switch
@@ -448,20 +478,18 @@ const ScheduleForm = () => {
                 <InputLabel id="schedule-provider">Provider</InputLabel>
                 <Select
                   labelId="schedule-provider"
-                  value={fields?.providerId ? fields.providerId : ""}
-                  onChange={handleFieldChange("providerId")}
+                  value={fields?.providerAddress ? fields.providerAddress : ""}
+                  onChange={handleFieldChange("providerAddress")}
                 >
                   <MenuItem disabled>None</MenuItem>
-                  {Object.entries(providers)
-                    .filter(
-                      ([id, provider]) =>
-                        provider.network === connectedToNetwork
-                    )
-                    .map(([id, provider]) => (
-                      <MenuItem key={`schedule-provider-${id}`} value={id}>
-                        {provider.name}
-                      </MenuItem>
-                    ))}
+                  {providers.map((provider) => (
+                    <MenuItem
+                      key={`schedule-provider-${provider.index}`}
+                      value={provider.config.contractAddress}
+                    >
+                      {`Provider #${provider.index + 1}`}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               <FormControl
@@ -472,33 +500,20 @@ const ScheduleForm = () => {
                 disabled={isLoading}
               >
                 <InputLabel id="schedule-provider-plan">Plan</InputLabel>
-                <Select
-                  labelId="schedule-provider-plan"
-                  value={`${
-                    fields?.providerPlanIndex ? fields.providerPlanIndex : ""
-                  }`}
-                  onChange={handleFieldChange("providerPlanIndex")}
-                >
-                  <MenuItem disabled>None</MenuItem>
-                  {providerPlans.map((plan) => (
-                    <MenuItem
-                      key={`schedule-provider-plan-${fields?.providerId}-${plan.index}`}
-                      value={`${plan.index}`}
-                    >
-                      <span style={{ fontWeight: "bold" }}>{`#${
-                        plan.index + 1
-                      }`}</span>
-                      <span
-                        style={{ marginLeft: 8 }}
-                      >{`Window: ${fromBigNumberToHms(
-                        plan.window
-                      )} - Gas limit: ${formatBigNumber(
-                        plan.gasLimit,
-                        0
-                      )}`}</span>
-                    </MenuItem>
-                  ))}
-                </Select>
+                {!selectedProvider && (
+                  <Select labelId="schedule-provider-plan">
+                    <MenuItem disabled>None</MenuItem>
+                  </Select>
+                )}
+                {selectedProvider && (
+                  <DisplayPlansMenu
+                    provider={selectedProvider}
+                    value={`${
+                      fields?.providerPlanIndex ? fields.providerPlanIndex : ""
+                    }`}
+                    onChange={handleFieldChange("providerPlanIndex")}
+                  />
+                )}
               </FormControl>
             </div>
             <div
@@ -546,11 +561,11 @@ const ScheduleForm = () => {
                 <InputLabel id="schedule-contract-method">Action</InputLabel>
                 <Select
                   labelId="schedule-contract-method"
-                  value={fields?.contractMethod ? fields.contractMethod : ""}
+                  value={fields?.contractAction ? fields.contractAction : ""}
                   onChange={handleMethodChange}
                 >
                   <MenuItem disabled>None</MenuItem>
-                  {contractMethods.map((method: any) => (
+                  {contractActions.map((method: any) => (
                     <MenuItem
                       key={`contract-method-${method.name}`}
                       value={method.name}
@@ -642,6 +657,39 @@ const ScheduleForm = () => {
 };
 
 export default ScheduleForm;
+
+const DisplayPlansMenu: React.FC<{
+  provider: IProviderSnapshot;
+  onChange: (event: any) => void;
+  value: string;
+}> = ({ provider, value, onChange }) => {
+  const [plans, loadPlans] = usePlans(provider);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    loadPlans().then(() => setIsLoading(false));
+  }, [loadPlans]);
+
+  return (
+    <Select labelId="schedule-provider-plan" value={value} onChange={onChange}>
+      <MenuItem disabled>{isLoading ? "loading..." : "None"}</MenuItem>
+      {plans.map((plan) => (
+        <MenuItem
+          key={`schedule-provider-plan-${plan.index}`}
+          value={`${plan.index}`}
+        >
+          <span style={{ fontWeight: "bold" }}>{`#${plan.index
+            .add(1)
+            .toString()}`}</span>
+          <span style={{ marginLeft: 8 }}>{`Window: ${fromBigNumberToHms(
+            plan.window
+          )} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}</span>
+        </MenuItem>
+      ))}
+    </Select>
+  );
+};
 
 const CustomTooltip = withStyles((theme: Theme) => ({
   tooltip: {

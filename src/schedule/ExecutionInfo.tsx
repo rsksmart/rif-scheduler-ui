@@ -5,19 +5,16 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { withStyles, Theme, createStyles } from "@material-ui/core/styles";
 import NetworkLabel from "../connect/NetworkLabel";
-import useSchedule from "./useSchedule";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
-import useContracts from "../contracts/useContracts";
-import useProviders from "../store/useProviders";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 import StatusLabel from "./StatusLabel";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shortText from "../shared/shortText";
 import IconButton from "@material-ui/core/IconButton";
@@ -28,82 +25,62 @@ import useConnector from "../connect/useConnector";
 import Link from "@material-ui/core/Link";
 import LinkIcon from "@material-ui/icons/Launch";
 import RefreshIcon from "@material-ui/icons/Refresh";
-import shallow from "zustand/shallow";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import { useEffect } from "react";
-import { ExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { useProvidersStore } from "../sdk-hooks/useProviders";
+import { useState } from "react";
+import { BIG_ZERO } from "../shared/reduceExecutionsLeft";
+import { IExecutionSnapshot, useExecution } from "../sdk-hooks/useExecution";
+import { ExecutionButton } from "./ExecutionButton";
+import { getMessageFromCode } from "eth-rpc-errors";
 
 const rowStyles = { display: "flex", alignItems: "center", gap: "5px" };
 
-const ExecutionInfo = ({
-  selectedExecutionId,
-  onClose,
-}: {
-  selectedExecutionId: string | null;
-  onClose: () => void;
-}) => {
+const ExecutionInfo: React.FC<{
+  execution: IExecutionSnapshot;
+}> = ({ execution }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const open = selectedExecutionId ? true : false;
+  const [open, setOpen] = useState<boolean>(false);
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const [refresh, cancel, refund, locateResult, contract, isConfirmed] =
+    useExecution(execution.ref, execution.index);
+
+  const providers = useProvidersStore((state) => state.providers);
+
+  const provider = providers.find(
+    (x) => x.config.contractAddress === execution.index.providerAddress
+  );
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const [
-    scheduleItems,
-    updateStatus,
-    updateResult,
-    cancelExecution,
-    refundExecution,
-    isLoading,
-  ] = useSchedule(
-    (state) => [
-      state.scheduleItems,
-      state.updateStatus,
-      state.updateResult,
-      state.cancelExecution,
-      state.refundExecution,
-      state.isLoading,
-    ],
-    shallow
-  );
-  const providers = useProviders((state) => state.providers);
-  const contracts = useContracts((state) => state.contracts);
-
   const connectedToNetwork = useConnector((state) => state.network);
 
-  const execution = selectedExecutionId
-    ? scheduleItems[selectedExecutionId]
-    : null;
-  const provider = execution ? providers[execution.providerId] : null;
-  const contract = execution ? contracts[execution.contractId] : null;
-  const plan =
-    execution && provider ? provider.plans[+execution.providerPlanIndex] : null;
-
   const scheduledTxExplorerAddressUrl =
-    execution?.scheduledTx &&
+    execution.index.scheduledTxHash &&
     connectedToNetwork &&
-    getExplorerTxLink(execution.scheduledTx, connectedToNetwork);
+    getExplorerTxLink(execution.index.scheduledTxHash, connectedToNetwork);
 
-  const executedTxExplorerAddressUrl =
-    execution?.executedTx &&
+  const completedTxExplorerAddressUrl =
+    execution.index.completedTxHash &&
     connectedToNetwork &&
-    getExplorerTxLink(execution.executedTx, connectedToNetwork);
+    getExplorerTxLink(execution.index.completedTxHash, connectedToNetwork);
 
   useEffect(() => {
-    if (!provider || !selectedExecutionId || !execution || !contract || !plan)
-      return;
-
     if (
-      !execution.executedTx &&
+      !execution.index.completedTxHash &&
       [
-        ExecutionState.ExecutionFailed,
-        ExecutionState.ExecutionSuccessful,
-      ].includes(execution.state ?? ExecutionState.Nonexistent)
+        EExecutionState.ExecutionFailed,
+        EExecutionState.ExecutionSuccessful,
+      ].includes(execution.state ?? EExecutionState.NotScheduled)
     ) {
-      updateResult(execution, contract, plan, provider);
+      locateResult();
     }
-  }, [contract, execution, plan, provider, selectedExecutionId, updateResult]);
+  }, [execution.index.completedTxHash, execution.state, locateResult]);
 
   const handleCopy = (textToCopy: string | undefined | null) => () => {
     if (!textToCopy) {
@@ -118,266 +95,278 @@ const ExecutionInfo = ({
     }
 
     navigator.clipboard.writeText(textToCopy);
-    enqueueSnackbar("Copied!");
+    enqueueSnackbar("Copied!", { autoHideDuration: 500 });
   };
 
-  const handleUpdateStatusClick = () => {
-    if (!provider || !selectedExecutionId) return;
+  const handleUpdateStatusClick = async () => {
+    setIsLoading(true);
 
-    updateStatus(selectedExecutionId, provider);
+    try {
+      await refresh();
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+    }
+
+    setIsLoading(false);
   };
 
-  const handleCancelClick = () => {
-    if (!provider || !selectedExecutionId) return;
+  const handleCancelClick = async () => {
+    setIsLoading(true);
 
-    cancelExecution(
-      selectedExecutionId,
-      provider,
-      () =>
-        enqueueSnackbar("Cancel schedule confirmed!", {
-          variant: "success",
-        }),
-      (message) =>
-        enqueueSnackbar(message, {
-          variant: "error",
-        })
-    );
+    try {
+      await cancel();
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+    }
+
+    setIsLoading(false);
   };
 
-  const handleRefundClick = () => {
-    if (!provider || !selectedExecutionId) return;
+  const handleRefundClick = async () => {
+    setIsLoading(true);
 
-    refundExecution(
-      selectedExecutionId,
-      provider,
-      () =>
-        enqueueSnackbar("Refund execution confirmed!", {
-          variant: "success",
-        }),
-      (message) =>
-        enqueueSnackbar(message, {
-          variant: "error",
-        })
-    );
+    try {
+      await refund();
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+    }
+
+    setIsLoading(false);
   };
 
-  if (
-    !provider ||
-    !selectedExecutionId ||
-    !provider ||
-    !execution ||
-    !contract ||
-    !plan
-  )
-    return null;
+  if (!provider || !contract) return null;
 
   return (
-    <Dialog
-      fullScreen={fullScreen}
-      maxWidth="sm"
-      fullWidth={true}
-      open={open}
-      onClose={onClose}
-    >
-      <DialogTitle>
-        <div style={{ display: "flex", flex: 1 }}>
-          <div style={{ display: "flex", flex: 1 }}>{execution.title}</div>
-          <NetworkLabel />
-        </div>
-      </DialogTitle>
-      <DialogContent>
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          style={{ border: `1px solid ${theme.palette.action.hover}` }}
-        >
-          <Table aria-label="info table">
-            <TableBody>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  #
-                </StrongTableCell>
-                <RegularTableCell align="right" style={rowStyles}>
-                  <IconButton
-                    aria-label="copy id"
-                    size="small"
-                    onClick={handleCopy(execution.id)}
-                  >
-                    <CopyIcon fontSize="inherit" />
-                  </IconButton>
-                  <span>{execution.id && shortText(execution.id)}</span>
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Scheduled tx
-                </StrongTableCell>
-                <RegularTableCell align="right" style={rowStyles}>
-                  <IconButton
-                    aria-label="copy transaction hash"
-                    size="small"
-                    onClick={handleCopy(execution.scheduledTx)}
-                  >
-                    <CopyIcon fontSize="inherit" />
-                  </IconButton>
-                  {scheduledTxExplorerAddressUrl && (
-                    <Link
-                      target="_blank"
-                      href={scheduledTxExplorerAddressUrl}
-                      rel="noreferrer"
-                      style={rowStyles}
+    <>
+      <ExecutionButton item={execution} onClick={() => setOpen(true)} />
+      <Dialog
+        fullScreen={fullScreen}
+        maxWidth="sm"
+        fullWidth={true}
+        open={open}
+        onClose={() => setOpen(false)}
+      >
+        <DialogTitle>
+          <div style={{ display: "flex", flex: 1 }}>
+            <div style={{ display: "flex", flex: 1 }}>
+              {execution.index.title}
+            </div>
+            <NetworkLabel />
+          </div>
+        </DialogTitle>
+        <DialogContent>
+          <TableContainer
+            component={Paper}
+            elevation={0}
+            style={{ border: `1px solid ${theme.palette.action.hover}` }}
+          >
+            <Table aria-label="info table">
+              <TableBody>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    #
+                  </StrongTableCell>
+                  <RegularTableCell align="right" style={rowStyles}>
+                    <IconButton
+                      aria-label="copy id"
+                      size="small"
+                      onClick={handleCopy(execution.id)}
                     >
-                      <LinkIcon style={{ fontSize: 16 }} />
-                      {execution.scheduledTx &&
-                        shortText(execution.scheduledTx)}
-                    </Link>
-                  )}
-                  {!scheduledTxExplorerAddressUrl && (
-                    <span>
-                      {execution.scheduledTx &&
-                        shortText(execution.scheduledTx)}
-                    </span>
-                  )}
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Status
-                </StrongTableCell>
-                <RegularTableCell align="right" style={rowStyles}>
-                  <IconButton
-                    aria-label="refresh status"
-                    size="small"
-                    onClick={handleUpdateStatusClick}
-                    disabled={isLoading || !execution.isConfirmed}
-                  >
-                    <RefreshIcon fontSize="inherit" />
-                  </IconButton>
-                  <StatusLabel execution={execution} isLoading={isLoading} />
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Execute at
-                </StrongTableCell>
-                <RegularTableCell align="right">
-                  {format(
-                    parseISO(execution.executeAt),
-                    "MMMM do yyyy, hh:mm aaa"
-                  )}
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  {provider.name}
-                </StrongTableCell>
-                <RegularTableCell align="right">
-                  {contract.name}&nbsp;&#10140;&nbsp;
-                  {hyphensAndCamelCaseToWords(execution.contractMethod)}
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Plan #{+execution.providerPlanIndex + 1}
-                </StrongTableCell>
-                <RegularTableCell align="right">
-                  {`Window: ${fromBigNumberToHms(
-                    plan.window
-                  )} - Gas limit: ${formatBigNumber(plan.gasLimit, 0)}`}
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Executed tx
-                </StrongTableCell>
-                <RegularTableCell align="right" style={rowStyles}>
-                  {execution.executedTx && (
+                      <CopyIcon fontSize="inherit" />
+                    </IconButton>
+                    <span>{shortText(execution.id)}</span>
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Scheduled tx
+                  </StrongTableCell>
+                  <RegularTableCell align="right" style={rowStyles}>
                     <IconButton
                       aria-label="copy transaction hash"
                       size="small"
-                      onClick={handleCopy(execution.executedTx)}
+                      onClick={handleCopy(execution.index.scheduledTxHash)}
                     >
                       <CopyIcon fontSize="inherit" />
                     </IconButton>
-                  )}
-                  {executedTxExplorerAddressUrl && (
-                    <Link
-                      target="_blank"
-                      href={executedTxExplorerAddressUrl}
-                      rel="noreferrer"
-                      style={rowStyles}
+                    {scheduledTxExplorerAddressUrl && (
+                      <Link
+                        target="_blank"
+                        href={scheduledTxExplorerAddressUrl ?? undefined}
+                        rel="noreferrer"
+                        style={rowStyles}
+                      >
+                        <LinkIcon style={{ fontSize: 16 }} />
+                        {execution.index.scheduledTxHash &&
+                          shortText(execution.index.scheduledTxHash)}
+                      </Link>
+                    )}
+                    {!scheduledTxExplorerAddressUrl && (
+                      <span>
+                        {execution.index.scheduledTxHash &&
+                          shortText(execution.index.scheduledTxHash)}
+                      </span>
+                    )}
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Status
+                  </StrongTableCell>
+                  <RegularTableCell align="right" style={rowStyles}>
+                    <IconButton
+                      aria-label="refresh status"
+                      size="small"
+                      onClick={handleUpdateStatusClick}
+                      disabled={isLoading || !isConfirmed}
                     >
-                      <LinkIcon style={{ fontSize: 16 }} />
-                      {execution.executedTx && shortText(execution.executedTx)}
-                    </Link>
-                  )}
-                  {!executedTxExplorerAddressUrl && (
+                      <RefreshIcon fontSize="inherit" />
+                    </IconButton>
+                    <StatusLabel
+                      execution={execution}
+                      isConfirmed={isConfirmed}
+                      isLoading={isLoading}
+                    />
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Execute at
+                  </StrongTableCell>
+                  <RegularTableCell align="right">
+                    {format(execution.executeAt, "MMMM do yyyy, hh:mm aaa")}
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    {`Provider #${provider?.index + 1}`}
+                  </StrongTableCell>
+                  <RegularTableCell align="right">
+                    {contract.name}&nbsp;&#10140;&nbsp;
+                    {hyphensAndCamelCaseToWords(execution.index.contractMethod)}
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Plan #{+execution.index.providerPlanIndex + 1}
+                  </StrongTableCell>
+                  <RegularTableCell align="right">
+                    {`Window: ${fromBigNumberToHms(
+                      execution.ref.plan.window ?? BIG_ZERO
+                    )} - Gas limit: ${formatBigNumber(
+                      execution.ref.plan.gasLimit ?? BIG_ZERO,
+                      0
+                    )}`}
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Executed tx
+                  </StrongTableCell>
+                  <RegularTableCell align="right" style={rowStyles}>
+                    {execution.index.completedTxHash && (
+                      <IconButton
+                        aria-label="copy transaction hash"
+                        size="small"
+                        onClick={handleCopy(execution.index.completedTxHash)}
+                      >
+                        <CopyIcon fontSize="inherit" />
+                      </IconButton>
+                    )}
+                    {completedTxExplorerAddressUrl && (
+                      <Link
+                        target="_blank"
+                        href={completedTxExplorerAddressUrl ?? undefined}
+                        rel="noreferrer"
+                        style={rowStyles}
+                      >
+                        <LinkIcon style={{ fontSize: 16 }} />
+                        {execution.index.completedTxHash &&
+                          shortText(execution.index.completedTxHash)}
+                      </Link>
+                    )}
+                    {!completedTxExplorerAddressUrl && (
+                      <span>
+                        {execution.index.completedTxHash
+                          ? shortText(execution.index.completedTxHash)
+                          : "---"}
+                      </span>
+                    )}
+                  </RegularTableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <StrongTableCell component="th" scope="row">
+                    Result
+                  </StrongTableCell>
+                  <RegularTableCell align="right" style={rowStyles}>
+                    {execution.index.result && (
+                      <IconButton
+                        aria-label="refresh result"
+                        size="small"
+                        onClick={
+                          execution.index.result
+                            ? handleCopy(execution.index.result)
+                            : undefined
+                        }
+                        disabled={isLoading}
+                      >
+                        <CopyIcon fontSize="inherit" />
+                      </IconButton>
+                    )}
                     <span>
-                      {execution.executedTx
-                        ? shortText(execution.executedTx)
+                      {execution.index.result
+                        ? shortText(execution.index.result)
                         : "---"}
                     </span>
-                  )}
-                </RegularTableCell>
-              </StyledTableRow>
-              <StyledTableRow>
-                <StrongTableCell component="th" scope="row">
-                  Result
-                </StrongTableCell>
-                <RegularTableCell align="right" style={rowStyles}>
-                  {execution.result && (
-                    <IconButton
-                      aria-label="refresh result"
-                      size="small"
-                      onClick={
-                        execution.result
-                          ? handleCopy(execution.result)
-                          : undefined
-                      }
-                      disabled={isLoading}
-                    >
-                      <CopyIcon fontSize="inherit" />
-                    </IconButton>
-                  )}
-                  <span>
-                    {execution.result ? shortText(execution.result) : "---"}
-                  </span>
-                </RegularTableCell>
-              </StyledTableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </DialogContent>
-      <DialogActions
-        style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
-      >
-        <div style={{ display: "flex", flex: 1 }}>
-          {execution.state === ExecutionState.Scheduled && (
-            <Button
-              onClick={handleCancelClick}
-              disabled={isLoading || !execution.isConfirmed}
-              color="secondary"
-              variant="contained"
-            >
-              Cancel
-            </Button>
-          )}
-          {execution.state === ExecutionState.Overdue && (
-            <Button
-              onClick={handleRefundClick}
-              disabled={isLoading || !execution.isConfirmed}
-              color="secondary"
-              variant="contained"
-            >
-              Refund
-            </Button>
-          )}
-        </div>
-        <Button onClick={onClose} color="inherit">
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
+                  </RegularTableCell>
+                </StyledTableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions
+          style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
+        >
+          <div style={{ display: "flex", flex: 1 }}>
+            {execution.state === EExecutionState.Scheduled && (
+              <Button
+                onClick={handleCancelClick}
+                disabled={isLoading || !isConfirmed}
+                color="secondary"
+                variant="contained"
+              >
+                Cancel
+              </Button>
+            )}
+            {execution.state === EExecutionState.Overdue && (
+              <Button
+                onClick={handleRefundClick}
+                disabled={isLoading || !isConfirmed}
+                color="secondary"
+                variant="contained"
+              >
+                Refund
+              </Button>
+            )}
+          </div>
+          <Button onClick={() => setOpen(false)} color="inherit">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

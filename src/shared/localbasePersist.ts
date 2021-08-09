@@ -8,7 +8,7 @@ type StateStorage = {
 const localbaseStorage: StateStorage = {
   async getItem(name: string) {
     let db = new Localbase("db");
-    db.config.debug = false
+    db.config.debug = false;
 
     const data = await db.collection("zustand").doc(name).get();
 
@@ -17,7 +17,7 @@ const localbaseStorage: StateStorage = {
 
   async setItem(name: string, value: string) {
     let db = new Localbase("db");
-    db.config.debug = false
+    db.config.debug = false;
 
     const data = JSON.parse(value);
 
