@@ -1,60 +1,76 @@
-import Chip from '@material-ui/core/Chip';
+import Chip from "@material-ui/core/Chip";
 import { ExecutionStateDescriptions } from "../shared/types";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
-import { ExecutionState } from '@rsksmart/rif-scheduler-sdk';
-import { IScheduleItem } from './useSchedule';
+import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { IExecutionSnapshot } from "../sdk-hooks/useExecution";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    [ExecutionState.Nonexistent]: {
+    [EExecutionState.NotScheduled]: {
       color: "#333",
       border: "1px solid #f7e463",
-      backgroundColor: "#f7e463"
+      backgroundColor: "#f7e463",
     },
-    [ExecutionState.Scheduled]: {
-        color: "#333",
-        border: "1px solid #7cd992",
-        backgroundColor: "#7cd992"
+    [EExecutionState.Scheduled]: {
+      color: "#333",
+      border: "1px solid #7cd992",
+      backgroundColor: "#7cd992",
     },
-    [ExecutionState.ExecutionSuccessful]: {
-        color: "#333",
-        border: "1px solid #7cd992",
-        backgroundColor: "#7cd992"
+    [EExecutionState.ExecutionSuccessful]: {
+      color: "#333",
+      border: "1px solid #7cd992",
+      backgroundColor: "#7cd992",
     },
-    [ExecutionState.ExecutionFailed]: {
-        color: "#fff",
-        border: "1px solid #eb6060",
-        backgroundColor: "#eb6060"
+    [EExecutionState.ExecutionFailed]: {
+      color: "#fff",
+      border: "1px solid #eb6060",
+      backgroundColor: "#eb6060",
     },
-    [ExecutionState.Overdue]: {
-        color: "#fff",
-        border: "1px solid #eb6060",
-        backgroundColor: "#eb6060"
+    [EExecutionState.Overdue]: {
+      color: "#fff",
+      border: "1px solid #eb6060",
+      backgroundColor: "#eb6060",
     },
-    [ExecutionState.Cancelled]: {
-        color: "#333",
-        border: "1px solid #a8a8a8",
-        backgroundColor: "#a8a8a8"
+    [EExecutionState.Cancelled]: {
+      color: "#333",
+      border: "1px solid #a8a8a8",
+      backgroundColor: "#a8a8a8",
     },
-    [ExecutionState.Refunded]: {
-        color: "#333",
-        border: "1px solid #a8a8a8",
-        backgroundColor: "#a8a8a8"
+    [EExecutionState.Refunded]: {
+      color: "#333",
+      border: "1px solid #a8a8a8",
+      backgroundColor: "#a8a8a8",
     },
   })
 );
 
-const StatusLabel = ({ execution, isLoading }: { execution: IScheduleItem, isLoading?: boolean }) => {
-    const classes = useStyles();
+const StatusLabel: React.FC<{
+  execution: IExecutionSnapshot;
+  isLoading?: boolean;
+  isConfirmed?: boolean;
+}> = ({ execution, isLoading, isConfirmed }) => {
+  const classes = useStyles();
 
-    const state = execution.state ?? ExecutionState.Nonexistent
-    const isConfirmed = execution.isConfirmed
+  const state = execution.state ?? EExecutionState.NotScheduled;
 
-    const label = isLoading ? "..." : (isConfirmed ? ExecutionStateDescriptions[state] : "Waiting confirmation")
+  const label = isLoading
+    ? "..."
+    : isConfirmed
+    ? ExecutionStateDescriptions[state]
+    : "Waiting confirmation";
 
-    return <Chip size="small" color="primary" variant="default" label={label} classes={{
-        colorPrimary: classes[isConfirmed ? state : ExecutionState.Nonexistent]
-    }} />
-}
+  return (
+    <Chip
+      size="small"
+      color="primary"
+      variant="default"
+      label={label}
+      classes={{
+        colorPrimary:
+          classes[isConfirmed ? state : EExecutionState.NotScheduled],
+      }}
+    />
+  );
+};
 
-export default StatusLabel
+export default StatusLabel;

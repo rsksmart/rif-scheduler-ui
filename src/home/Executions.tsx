@@ -9,11 +9,13 @@ import {
   Link,
 } from "@material-ui/core";
 import StoreIcon from "@material-ui/icons/Store";
-import useConnector from "../connect/useConnector";
 import { formatBigNumber } from "../shared/formatters";
-import useProviders from "../store/useProviders";
 import { Link as RouterLink } from "react-router-dom";
-import { BIG_ZERO, executionsLeft } from "../shared/reduceExecutionsLeft";
+import { BIG_ZERO } from "../shared/reduceExecutionsLeft";
+import { useState } from "react";
+import { useEffect } from "react";
+import { useProvidersStore } from "../sdk-hooks/useProviders";
+import { getExecutionsLeftTotal } from "../sdk-hooks/getExecutionsLeftTotal";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -29,25 +31,12 @@ const useStyles = makeStyles(() => ({
 const Executions = ({ className, ...rest }: any) => {
   const classes = useStyles();
 
-  const connectedToNetwork = useConnector((state) => state.network);
+  const [executionsLeft, setExecutionsLeft] = useState(BIG_ZERO);
+  const providers = useProvidersStore((state) => state.providers);
 
-  const providers = useProviders((state) => state.providers);
-
-  const networkProviders = Object.entries(providers).filter(
-    ([id, provider]) => provider.network === connectedToNetwork
-  );
-
-  const executionsLeftResult = networkProviders.reduce(
-    (accumulated, [id, provider]) => {
-      const providerExecutionsLeft = provider.plans.reduce(
-        executionsLeft,
-        BIG_ZERO
-      );
-
-      return accumulated.add(providerExecutionsLeft);
-    },
-    BIG_ZERO
-  );
+  useEffect(() => {
+    getExecutionsLeftTotal(providers).then((total) => setExecutionsLeft(total));
+  }, [providers]);
 
   return (
     <Card className={[classes.root, className].join(" ")} {...rest}>
@@ -58,7 +47,7 @@ const Executions = ({ className, ...rest }: any) => {
               REMAINING EXECUTIONS
             </Typography>
             <Typography color="textPrimary" variant="h3">
-              {formatBigNumber(executionsLeftResult, 0)}
+              {formatBigNumber(executionsLeft, 0)}
             </Typography>
             <Link component={RouterLink} color="textSecondary" to="/store">
               Go to store &rsaquo;
