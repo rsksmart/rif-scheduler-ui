@@ -1,11 +1,11 @@
 import { BigNumber } from "ethers";
-import { IPlan } from "../store/useProviders";
+import { IPlanSnapshot } from "../sdk-hooks/usePlan";
 
 export const BIG_ZERO = BigNumber.from(0);
 
 export const executionsLeft = (
   accumulatedPlans: BigNumber | undefined,
-  currentPlan: IPlan
+  currentPlan: IPlanSnapshot
 ) => {
   const accumulated = accumulatedPlans ?? BIG_ZERO;
 

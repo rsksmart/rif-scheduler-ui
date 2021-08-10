@@ -16,8 +16,9 @@ import AccountIcon from "@material-ui/icons/AccountBalanceWallet";
 import DisconnectIcon from "@material-ui/icons/ExitToApp";
 import { useSnackbar } from "notistack";
 import shortText from "../shared/shortText";
-import Hidden from '@material-ui/core/Hidden';
+import Hidden from "@material-ui/core/Hidden";
 import NetworkLabel from "./NetworkLabel";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -38,6 +39,8 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Account = () => {
   const classes = useStyles();
+  const history = useHistory();
+
   const { enqueueSnackbar } = useSnackbar();
 
   const [account, disconnect] = useConnector(
@@ -54,7 +57,7 @@ const Account = () => {
     }
 
     navigator.clipboard.writeText(account!);
-    enqueueSnackbar("Copied!");
+    enqueueSnackbar("Copied!", { autoHideDuration: 500 });
   };
 
   return (
@@ -80,7 +83,13 @@ const Account = () => {
               />
             </ListItem>
             <Divider />
-            <ListItem button onClick={disconnect}>
+            <ListItem
+              button
+              onClick={() => {
+                disconnect();
+                history.replace("/");
+              }}
+            >
               <ListItemIcon>
                 <DisconnectIcon />
               </ListItemIcon>

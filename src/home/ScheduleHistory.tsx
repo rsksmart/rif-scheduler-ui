@@ -11,8 +11,7 @@ import {
 import ScheduleIcon from "@material-ui/icons/Timeline";
 import useConnector from "../connect/useConnector";
 import { Link as RouterLink } from "react-router-dom";
-import useSchedule from "../schedule/useSchedule";
-import { ExecutionState } from "@rsksmart/rif-scheduler-sdk";
+import { useIndexedExecutionsStore } from "../sdk-hooks/useExecutions";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -30,12 +29,12 @@ const ScheduleHistory = ({ className, ...rest }: any) => {
 
   const connectedToNetwork = useConnector((state) => state.network);
 
-  const scheduledExecutions = useSchedule((state) => state.scheduleItems);
+  const indexedExecutions = useIndexedExecutionsStore(
+    (state) => state.indexedExecutions
+  );
 
-  const networkScheduledExecutions = Object.entries(scheduledExecutions).filter(
-    ([id, execution]) =>
-      execution.network === connectedToNetwork &&
-      execution.state !== ExecutionState.Nonexistent
+  const networkScheduledExecutions = Object.values(indexedExecutions).filter(
+    (index) => index.network === connectedToNetwork && index.completedTxHash
   );
 
   return (
@@ -44,7 +43,7 @@ const ScheduleHistory = ({ className, ...rest }: any) => {
         <Grid container justify="space-between" spacing={3}>
           <Grid item style={{ flex: 1 }}>
             <Typography color="textSecondary" gutterBottom variant="h6">
-              EXECUTIONS TOTAL
+              EXECUTIONS COMPLETED
             </Typography>
             <Typography color="textPrimary" variant="h3">
               {networkScheduledExecutions.length}
