@@ -44,9 +44,7 @@ const ScheduleFormDialog = ({
 
   if (alerts.length === 0) return null;
 
-  const hasErrors = currentAlerts.find((x) => x.severity === "error")
-    ? true
-    : false;
+  const hasErrors = currentAlerts.some((x) => x.severity === "error")
 
   const handleRevalidate = (index: number) => () => {
     setCurrentAlerts((prev) => {
