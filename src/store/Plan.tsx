@@ -34,7 +34,7 @@ import { getMessageFromCode } from "eth-rpc-errors";
 
 const rowStyles = { display: "flex", alignItems: "center", gap: "5px" };
 
-enum EApprovalStatus {
+export enum EApprovalStatus {
   verify,
   verified,
   approved,
