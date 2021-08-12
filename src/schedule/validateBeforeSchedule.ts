@@ -6,28 +6,39 @@ import { useIndexedExecutionsStore } from "../sdk-hooks/useExecutions";
 import { IProviderSnapshot } from "../sdk-hooks/useProviders";
 import environment from "../shared/environment";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
-import { IFormFields } from "./ScheduleForm";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
+import { ICronField } from "./cronParser/convertToCronExpression";
+
+export interface IValidationInput {
+  executeAt: string;
+  providerAddress: string;
+  providerPlanIndex: string;
+  contractAction: string;
+  contractFields: string[];
+  isRecurrent: boolean;
+  cronFields: ICronField;
+  cronQuantity: number;
+  contract: IContract;
+  provider: IProviderSnapshot;
+  myAccountAddress: string;
+}
 
 export const validateBeforeSchedule = async (
-  scheduleItem: IFormFields,
-  contract: IContract,
-  provider: IProviderSnapshot,
-  myAccountAddress: string
+  validationInput: IValidationInput
 ): Promise<IScheduleFormDialogAlert[]> => {
   // TODO: add an input form for this value
   const valueToTransfer = BigNumber.from(0);
 
-  const scheduler = new RIFScheduler(provider.config);
+  const scheduler = new RIFScheduler(validationInput.provider.config);
 
   const plan = await scheduler.getPlan(
-    BigNumber.from(scheduleItem.providerPlanIndex)
+    BigNumber.from(validationInput.providerPlanIndex)
   );
 
   const result: IScheduleFormDialogAlert[] = [];
 
-  const executionsQuantity = scheduleItem.isRecurrent
-    ? +scheduleItem.cronQuantity!
+  const executionsQuantity = validationInput.isRecurrent
+    ? validationInput.cronQuantity
     : 1;
 
   // validate purchased execution
@@ -48,20 +59,20 @@ export const validateBeforeSchedule = async (
   }
 
   const encodedFunctionCall = new utils.Interface(
-    contract.ABI
+    validationInput.contract.ABI
   ).encodeFunctionData(
-    scheduleItem.contractAction,
-    scheduleItem.contractFields
+    validationInput.contractAction,
+    validationInput.contractFields
   );
 
   const execution = new Execution(
     scheduler.config,
     plan,
-    contract.address,
+    validationInput.contract.address,
     encodedFunctionCall,
-    parseISO(scheduleItem.executeAt),
+    parseISO(validationInput.executeAt),
     valueToTransfer,
-    myAccountAddress
+    validationInput.myAccountAddress
   );
 
   // if gasEstimation is undefined warn the user that the execution might fail
@@ -99,7 +110,7 @@ export const validateBeforeSchedule = async (
     environment.MINIMUM_TIME_BEFORE_EXECUTION
   );
 
-  if (parseISO(scheduleItem.executeAt) <= minimumDate) {
+  if (parseISO(validationInput.executeAt) <= minimumDate) {
     result.push({
       message: `You need to schedule at least ${fromBigNumberToHms(
         BigNumber.from(environment.MINIMUM_TIME_BEFORE_EXECUTION)
@@ -109,11 +120,11 @@ export const validateBeforeSchedule = async (
   }
 
   // validate existing scheduled execution
-  const executions = scheduleItem.isRecurrent
+  const executions = validationInput.isRecurrent
     ? Execution.fromCronExpression(
         execution,
-        scheduleItem.cronFields?.expression!,
-        +scheduleItem.cronQuantity!
+        validationInput.cronFields?.expression!,
+        +validationInput.cronQuantity!
       )
     : [execution];
 
@@ -124,11 +135,11 @@ export const validateBeforeSchedule = async (
   ).find(
     (index) =>
       executionsIds.includes(index.id!) &&
-      index.providerAddress === scheduleItem.providerAddress
+      index.providerAddress === validationInput.providerAddress
   );
 
   if (existing) {
-    const message = scheduleItem.isRecurrent
+    const message = validationInput.isRecurrent
       ? "One or more executions are already scheduled."
       : "This execution is already scheduled";
 

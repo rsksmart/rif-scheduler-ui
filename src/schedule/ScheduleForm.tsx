@@ -55,6 +55,7 @@ import { validateBeforeSchedule } from "./validateBeforeSchedule";
 import { usePlans } from "../sdk-hooks/usePlans";
 import { useExecutions } from "../sdk-hooks/useExecutions";
 import { getMessageFromCode } from "eth-rpc-errors";
+import useField from "../shared/useField";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -74,33 +75,23 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const DEFAULT_FIELDS: Partial<IFormFields> = {
-  cronFields: DEFAULT_CRON_FIELD,
-  cronQuantity: "0",
-};
-
-export interface IFormFields {
-  title: string;
-  executeAt: string;
-  providerAddress: string;
-  providerPlanIndex: string;
-  contractId: string;
-  contractAction: string;
-  contractFields: string[];
-  color?: string;
-  isRecurrent?: boolean;
-  cronFields?: ICronField;
-  cronQuantity?: string;
-}
-
 const ScheduleForm = () => {
   const classes = useStyles();
 
   const [, , schedule] = useExecutions();
 
-  const [fields, setFields] = useState<Partial<IFormFields> | null>(
-    DEFAULT_FIELDS
-  );
+  const title = useField<string>();
+  const executeAt = useField<string>();
+  const providerAddress = useField<string>();
+  const providerPlanIndex = useField<string>();
+  const contractId = useField<string>();
+  const contractAction = useField<string>();
+  const contractFields = useField<string[]>([]);
+  const color = useField<string>(null, false);
+  const isRecurrent = useField<boolean>(false, false);
+  const cronFields = useField<ICronField>(DEFAULT_CRON_FIELD);
+  const cronQuantity = useField<string>("1");
+
   const [alerts, setAlerts] = useState<
     IScheduleFormDialogAlert[] | undefined
   >();
@@ -119,71 +110,56 @@ const ScheduleForm = () => {
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const handleExecuteAtChange = (date: Date | null) => {
-    setFields((values) => ({
-      ...values,
-      executeAt: date && isValid(date) ? date.toISOString() : undefined,
-    }));
+  const handleProviderAddressChange = (event: any) => {
+    providerAddress.onChange(event);
+    providerPlanIndex.clear();
   };
 
   const handleContractChange = (event: any) => {
-    setFields((values) => ({
-      ...values,
-      contractId: event.target.value,
-      contractAction: undefined,
-      contractFields: undefined,
-    }));
+    contractId.onChange(event);
+    contractAction.clear();
+    contractFields.clear();
   };
 
   const handleMethodChange = (event: any) => {
-    setFields((values) => ({
-      ...values,
-      contractAction: event.target.value,
-      contractFields: undefined,
-    }));
-  };
-
-  const handleContractFieldsChange = (index: number) => (event: any) => {
-    setFields((values) => {
-      const newFields = [...(values?.contractFields ?? [])];
-      newFields[index] = event.target.value;
-
-      return { ...values, contractFields: newFields };
-    });
-  };
-
-  const handleFieldChange = (fieldName: string) => (event: any) => {
-    setFields((values) => ({ ...values, [fieldName]: event.target.value }));
-  };
-
-  const handleCronFieldsChange = (event: any) => {
-    const cronFields = event.target.value;
-
-    setFields((values) => ({ ...values, cronFields }));
+    contractAction.onChange(event);
+    contractFields.clear();
   };
 
   const handleCronQuantityIncrement = (increment: number) => (event: any) => {
-    let quantity =
-      (fields?.cronQuantity ? +fields?.cronQuantity : 0) + increment;
+    let quantity = cronQuantity.value ? +cronQuantity.value : 1;
+    quantity = quantity === 1 ? 0 : quantity;
+    quantity = quantity + increment;
 
-    if (quantity <= 0) quantity = 0;
+    if (quantity <= 1) quantity = 1;
 
-    setFields((values) => ({ ...values, cronQuantity: quantity.toString() }));
+    cronQuantity.onChange({ target: { value: quantity.toString() } });
   };
 
-  const handleIsRecurrentFieldChange = (event: any, checked: boolean) => {
-    setFields((values) => ({
-      ...values,
-      isRecurrent: checked,
-    }));
+  const handleCronQuantityChange = (event: any) => {
+    let quantity = +event.target.value;
+
+    if (quantity <= 1) quantity = 1;
+
+    cronQuantity.onChange({ target: { value: quantity.toString() } });
   };
 
   const handleClear = () => {
-    setFields((prev) => ({ ...DEFAULT_FIELDS }));
+    title.clear();
+    executeAt.clear();
+    providerAddress.clear();
+    providerPlanIndex.clear();
+    contractId.clear();
+    contractAction.clear();
+    contractFields.clear();
+    color.clear();
+    isRecurrent.clear();
+    cronFields.clear();
+    cronQuantity.clear();
   };
 
-  const abi = fields?.contractId
-    ? JSON.parse(contracts[fields.contractId].ABI)
+  const abi = contractId.value
+    ? JSON.parse(contracts[contractId.value].ABI)
     : null;
 
   const contractActions = abi
@@ -191,63 +167,68 @@ const ScheduleForm = () => {
     : [];
 
   const contractInputs =
-    abi && fields?.contractAction
+    abi && contractAction.value
       ? abi.find(
-          (x: any) => x.type === "function" && x.name === fields.contractAction
+          (x: any) => x.type === "function" && x.name === contractAction.value
         )?.inputs
       : undefined;
 
   const selectedProvider = providers.find(
-    (provider) => provider.config.contractAddress === fields?.providerAddress
+    (provider) => provider.config.contractAddress === providerAddress.value
   );
 
   const validateForm = () => {
+    [
+      title,
+      executeAt,
+      providerAddress,
+      providerPlanIndex,
+      contractId,
+      contractAction,
+      contractFields,
+      color,
+      isRecurrent,
+      cronFields,
+      cronQuantity,
+    ].forEach((field) => field.validate(contractInputs?.length ?? 1));
+
     const isValid =
-      fields &&
-      fields.title &&
-      fields.contractId &&
-      fields.contractAction &&
-      fields.executeAt &&
-      fields.providerAddress &&
-      fields.providerPlanIndex;
+      !title.error &&
+      !contractId.error &&
+      !contractAction.error &&
+      !executeAt.error &&
+      !providerAddress.error &&
+      !providerPlanIndex.error &&
+      !contractFields.error &&
+      !cronQuantity.error &&
+      !isRecurrent.error;
 
-    const isValidRecurrence =
-      fields &&
-      (fields.isRecurrent
-        ? fields.cronFields && +(fields.cronQuantity ?? "0") > 0
-        : true);
-
-    let isContractFieldsValid = true;
-    for (let i = 0; contractInputs && i < contractInputs.length; i++) {
-      isContractFieldsValid =
-        fields?.contractFields && fields.contractFields[i] ? true : false;
-
-      if (!isContractFieldsValid) break;
-    }
-
-    return isValid && isValidRecurrence && isContractFieldsValid;
+    return isValid;
   };
 
   const handleSchedule = async () => {
     const provider = providers.find(
-      (x) => x.config.contractAddress === fields?.providerAddress
+      (x) => x.config.contractAddress === providerAddress.value
     );
 
     const isFormValid = validateForm();
 
     if (provider && isFormValid) {
-      const scheduleItem = {
-        ...fields,
-        network: connectedToNetwork!,
-      } as IFormFields;
-      const selectedContract = contracts[fields!.contractId!];
+      const selectedContract = contracts[contractId.value!];
 
-      const alerts = await validateBeforeSchedule(
-        scheduleItem,
-        selectedContract,
+      const alerts = await validateBeforeSchedule({
+        contractAction: contractAction.value!,
+        contractFields: contractFields.value!,
+        cronFields: cronFields.value!,
+        cronQuantity: +cronQuantity.value!,
+        executeAt: executeAt.value!,
+        isRecurrent: isRecurrent.value!,
+        providerAddress: providerAddress.value!,
+        providerPlanIndex: providerPlanIndex.value!,
+        contract: selectedContract,
         provider,
-        account!
-      );
+        myAccountAddress: account!,
+      });
 
       setAlerts(alerts);
 
@@ -267,30 +248,26 @@ const ScheduleForm = () => {
   };
 
   const handleScheduleAndSave = async () => {
-    const provider = providers.find(
-      (x) => x.config.contractAddress === fields?.providerAddress
-    );
-
     setIsLoading(true);
 
     try {
       await schedule({
-        title: fields!.title!,
+        title: title.value!,
         network: connectedToNetwork!,
-        contractId: fields!.contractId!,
-        contractMethod: fields!.contractAction!,
-        contractFields: fields!.contractFields!,
-        color: fields!.color!,
-        executeAtISO: fields!.executeAt!,
-        providerAddress: provider!.config.contractAddress,
-        providerPlanIndex: fields!.providerPlanIndex!,
+        contractId: contractId.value!,
+        contractMethod: contractAction.value!,
+        contractFields: contractFields.value!,
+        color: color.value!,
+        executeAtISO: executeAt.value!,
+        providerAddress: providerAddress.value!,
+        providerPlanIndex: providerPlanIndex.value!,
         value: "0",
         requestor: account!,
-        isRecurrent: fields!.isRecurrent!,
-        cronExpression: fields!.isRecurrent!
-          ? fields!.cronFields!.expression!
+        isRecurrent: isRecurrent.value!,
+        cronExpression: isRecurrent.value!
+          ? cronFields.value!.expression!
           : undefined,
-        quantity: fields!.isRecurrent! ? fields!.cronQuantity! : undefined,
+        quantity: isRecurrent.value! ? cronQuantity.value! : undefined,
       });
 
       handleClear();
@@ -332,8 +309,10 @@ const ScheduleForm = () => {
                 variant="filled"
                 fullWidth
                 style={{ flex: 1, minWidth: 200 }}
-                onChange={handleFieldChange("title")}
-                value={fields?.title ? fields.title : ""}
+                onChange={title.onChange}
+                onBlur={title.onBlur}
+                value={title.value ? title.value : ""}
+                error={title.error}
               />
               <FormControlLabel
                 style={{
@@ -344,8 +323,12 @@ const ScheduleForm = () => {
                 }}
                 control={
                   <Switch
-                    checked={fields?.isRecurrent ? true : false}
-                    onChange={handleIsRecurrentFieldChange}
+                    checked={isRecurrent.value!}
+                    onChange={() =>
+                      isRecurrent.onChange({
+                        target: { value: !isRecurrent.value },
+                      })
+                    }
                     color="primary"
                   />
                 }
@@ -366,25 +349,32 @@ const ScheduleForm = () => {
                 margin="dense"
                 id="executeAt"
                 inputVariant="filled"
-                label={fields?.isRecurrent ? "Starts At" : "Execute At"}
+                label={isRecurrent.value ? "Starts At" : "Execute At"}
                 format="MM/dd/yyyy HH:mm"
                 fullWidth={true}
                 style={{ flex: 1, minWidth: 200 }}
-                value={fields?.executeAt ? parseISO(fields.executeAt) : null}
-                onChange={handleExecuteAtChange}
+                value={executeAt.value ? parseISO(executeAt.value) : null}
+                onChange={(date: Date | null) => {
+                  executeAt.onChange({
+                    target: {
+                      value: date && isValid(date) ? date.toISOString() : null,
+                    },
+                  });
+                }}
                 KeyboardButtonProps={{
                   "aria-label": "change execute at",
                 }}
+                error={executeAt.error}
               />
               <CustomTooltip
                 open={cronFieldFocused}
                 title={
-                  fields?.cronFields?.description ??
+                  cronFields.value?.description ??
                   "Failed to load the description"
                 }
               >
                 <TextField
-                  disabled={isLoading || !fields?.isRecurrent}
+                  disabled={isLoading || !isRecurrent.value!}
                   margin="dense"
                   label="Recurrence expression"
                   variant="filled"
@@ -392,7 +382,7 @@ const ScheduleForm = () => {
                   style={{ flex: 1, minWidth: 200 }}
                   onFocus={() => setCronFieldFocused(true)}
                   onBlur={() => setCronFieldFocused(false)}
-                  value={fields?.cronFields?.description}
+                  value={cronFields.value?.description}
                   inputProps={{
                     style: {
                       textOverflow: "ellipsis",
@@ -407,24 +397,25 @@ const ScheduleForm = () => {
                         style={{ paddingRight: 12 }}
                       >
                         <CronButton
-                          onChange={handleCronFieldsChange}
-                          value={fields?.cronFields ?? DEFAULT_CRON_FIELD}
-                          disabled={isLoading || !fields?.isRecurrent}
+                          onChange={isRecurrent.onChange as any}
+                          value={cronFields.value!}
+                          disabled={isLoading || !isRecurrent.value!}
                         />
                       </InputAdornment>
                     ),
                   }}
+                  error={cronFields.error}
                 />
               </CustomTooltip>
               <TextField
-                disabled={isLoading || !fields?.isRecurrent}
+                disabled={isLoading || !isRecurrent.value!}
                 margin="dense"
                 label="Executions quantity"
                 variant="filled"
                 fullWidth
                 style={{ flex: 1, minWidth: 200 }}
-                onChange={handleFieldChange("cronQuantity")}
-                value={fields?.cronQuantity ? fields.cronQuantity : "0"}
+                onChange={handleCronQuantityChange}
+                value={cronQuantity.value ? cronQuantity.value : "1"}
                 InputProps={{
                   inputComponent: NumberInput as any,
                   startAdornment: (
@@ -434,7 +425,7 @@ const ScheduleForm = () => {
                         aria-label="sub 10 quantity"
                         onClick={handleCronQuantityIncrement(-10)}
                         edge="start"
-                        disabled={isLoading || !fields?.isRecurrent}
+                        disabled={isLoading || !isRecurrent.value!}
                       >
                         <MinusIcon />
                       </IconButton>
@@ -450,13 +441,14 @@ const ScheduleForm = () => {
                         aria-label="add 10 quantity"
                         onClick={handleCronQuantityIncrement(10)}
                         edge="end"
-                        disabled={isLoading || !fields?.isRecurrent}
+                        disabled={isLoading || !isRecurrent.value!}
                       >
                         <PlusIcon />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+                error={cronQuantity.error}
               />
             </div>
             <div
@@ -474,12 +466,14 @@ const ScheduleForm = () => {
                 style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
+                error={providerAddress.error}
               >
                 <InputLabel id="schedule-provider">Provider</InputLabel>
                 <Select
                   labelId="schedule-provider"
-                  value={fields?.providerAddress ? fields.providerAddress : ""}
-                  onChange={handleFieldChange("providerAddress")}
+                  value={providerAddress.value ? providerAddress.value : ""}
+                  onChange={handleProviderAddressChange}
+                  onBlur={providerAddress.onBlur}
                 >
                   <MenuItem disabled>None</MenuItem>
                   {providers.map((provider) => (
@@ -498,6 +492,7 @@ const ScheduleForm = () => {
                 style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
+                error={providerPlanIndex.error}
               >
                 <InputLabel id="schedule-provider-plan">Plan</InputLabel>
                 {!selectedProvider && (
@@ -508,10 +503,10 @@ const ScheduleForm = () => {
                 {selectedProvider && (
                   <DisplayPlansMenu
                     provider={selectedProvider}
-                    value={`${
-                      fields?.providerPlanIndex ? fields.providerPlanIndex : ""
-                    }`}
-                    onChange={handleFieldChange("providerPlanIndex")}
+                    value={
+                      providerPlanIndex.value ? providerPlanIndex.value : ""
+                    }
+                    onChange={providerPlanIndex.onChange}
                   />
                 )}
               </FormControl>
@@ -531,11 +526,12 @@ const ScheduleForm = () => {
                 style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
+                error={contractId.error}
               >
                 <InputLabel id="schedule-contract">Contract</InputLabel>
                 <Select
                   labelId="schedule-contract"
-                  value={fields?.contractId ? fields.contractId : ""}
+                  value={contractId.value ? contractId.value : ""}
                   onChange={handleContractChange}
                 >
                   <MenuItem disabled>None</MenuItem>
@@ -557,11 +553,12 @@ const ScheduleForm = () => {
                 style={{ flex: 1, minWidth: 200 }}
                 margin="dense"
                 disabled={isLoading}
+                error={contractAction.error}
               >
                 <InputLabel id="schedule-contract-method">Action</InputLabel>
                 <Select
                   labelId="schedule-contract-method"
-                  value={fields?.contractAction ? fields.contractAction : ""}
+                  value={contractAction.value ? contractAction.value : ""}
                   onChange={handleMethodChange}
                 >
                   <MenuItem disabled>None</MenuItem>
@@ -597,6 +594,7 @@ const ScheduleForm = () => {
               {contractInputs &&
                 contractInputs.map(({ name, type }: any, index: number) => (
                   <TextField
+                    error={contractFields.error}
                     key={`field-${name}-${type}`}
                     disabled={isLoading}
                     margin="dense"
@@ -608,11 +606,9 @@ const ScheduleForm = () => {
                     }
                     variant="filled"
                     fullWidth
-                    onChange={handleContractFieldsChange(index)}
+                    onChange={(event) => contractFields.onChange(event, index)}
                     value={
-                      fields?.contractFields
-                        ? fields?.contractFields[index]
-                        : ""
+                      contractFields.value ? contractFields.value[index] : ""
                     }
                   />
                 ))}
@@ -624,8 +620,8 @@ const ScheduleForm = () => {
         >
           <ColorSelector
             disabled={isLoading}
-            value={fields?.color ? fields.color : ""}
-            onChange={handleFieldChange("color")}
+            value={color.value ? color.value : ""}
+            onChange={color.onChange as any}
           />
           <div
             style={{
