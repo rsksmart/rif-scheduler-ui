@@ -26,7 +26,7 @@ const useRowStyles = makeStyles((theme: Theme) =>
       flexDirection: "column",
       flex: 1,
     },
-    row: ({ color = "#333" }: any) => ({
+    row: ({ color }: any) => ({
       borderLeft: `${color} 4px solid`,
       borderBottom: `${color} 1px solid`,
       borderRadius: 15,
@@ -38,7 +38,7 @@ export const ExecutionButton: React.FC<{
   item: IExecutionSnapshot;
   onClick?: () => void;
 }> = ({ item, onClick }) => {
-  const classes = useRowStyles({ color: item.index.color });
+  const classes = useRowStyles({ color: item.index.color ?? "#333" });
 
   const { enqueueSnackbar } = useSnackbar();
 
