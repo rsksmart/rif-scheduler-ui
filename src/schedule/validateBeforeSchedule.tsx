@@ -8,6 +8,7 @@ import environment from "../shared/environment";
 import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
 import { ICronField } from "./cronParser/convertToCronExpression";
+import PurchaseWhileScheduleButton from "./PurchaseWhileScheduleButton";
 
 export interface IValidationInput {
   executeAt: string;
@@ -47,14 +48,31 @@ export const validateBeforeSchedule = async (
   );
 
   if (!hasAnExecutionLeft) {
+    const tokenDecimals = await plan.token.decimals();
+    const tokenSymbol = await plan.token.symbol();
+    const tokenType = plan.token.getType();
+    const isActive = await plan.isActive();
+
     result.push({
       message: `You don't have ${formatBigNumber(
         BigNumber.from(executionsQuantity),
         0
-      )} ${executionsQuantity === 1 ? "execution" : "executions"} left`,
+      )} ${
+        executionsQuantity === 1 ? "execution" : "executions"
+      } left — ${formatBigNumber(
+        plan.pricePerExecution.mul(executionsQuantity),
+        tokenDecimals
+      )} ${tokenSymbol}`,
       severity: "error",
-      actionLabel: "Purchase more",
-      actionLink: "/store",
+      actionButton: (onRevalidate) => (
+        <PurchaseWhileScheduleButton
+          plan={plan}
+          tokenType={tokenType}
+          executionsQuantity={BigNumber.from(executionsQuantity)}
+          planIsActive={isActive}
+          onRevalidate={onRevalidate}
+        />
+      ),
     });
   }
 
