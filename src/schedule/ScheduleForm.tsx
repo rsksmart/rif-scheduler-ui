@@ -397,7 +397,7 @@ const ScheduleForm = () => {
                         style={{ paddingRight: 12 }}
                       >
                         <CronButton
-                          onChange={isRecurrent.onChange as any}
+                          onChange={cronFields.onChange as any}
                           value={cronFields.value!}
                           disabled={isLoading || !isRecurrent.value!}
                         />
