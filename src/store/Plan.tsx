@@ -41,8 +41,6 @@ enum EApprovalStatus {
 }
 
 const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
-  console.log({ value }, value.ref.token.address);
-
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
