@@ -71,7 +71,7 @@ const PlansList: React.FC<{
     <>
       <Loading isLoading={isLoading} />
       <Accordion
-        expanded={expanded}
+        expanded={expandedFixed || expanded}
         onChange={handleExpandChange}
         elevation={0}
         className={classes.expanderRoot}
@@ -79,6 +79,7 @@ const PlansList: React.FC<{
         <AccordionSummary
           expandIcon={!expandedFixed ? <ExpandMoreIcon /> : undefined}
           aria-controls={`accordion-content-${provider.index}`}
+          style={{ cursor: expandedFixed ? "default" : "pointer" }}
           id={`accordion-header-${provider.index}`}
         >
           <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
