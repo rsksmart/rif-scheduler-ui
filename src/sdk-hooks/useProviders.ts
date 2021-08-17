@@ -32,13 +32,18 @@ export const createProviderSnapshot = (
   network: ENetwork,
   signer: Signer
 ): IProviderSnapshot => {
+  const supportedERC677Tokens =
+    network === ENetwork.RSKMainnet
+      ? environment.ER677_TOKENS_MAINNET
+      : environment.ER677_TOKENS_TESTNET;
+
   return {
     index,
     network: network,
     config: {
       contractAddress: address,
       providerOrSigner: signer as any,
-      supportedERC677Tokens: environment.ER677_TOKENS,
+      supportedERC677Tokens,
     },
   };
 };
