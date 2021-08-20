@@ -95,23 +95,29 @@ export const usePlan = (plan: Plan) => {
     [plan, registerTx]
   );
 
+  const refresh = useCallback(async () => {
+    return createPlanSnapshot(plan).then((snap) => {
+      setPlan(snap);
+    });
+  }, [plan, setPlan]);
+
   useEffect(() => {
     const hasPendingTransactions = pendingTransactions.length > 0;
 
     if (hasPendingTransactions) {
       setIsConfirmed(false);
     } else if (!hasPendingTransactions && !isConfirmed) {
-      createPlanSnapshot(plan).then((snap) => {
-        setPlan(snap);
+      refresh().then(() => {
         setIsConfirmed(true);
       });
     }
-  }, [isConfirmed, pendingTransactions, plan, setPlan]);
+  }, [isConfirmed, pendingTransactions.length, refresh]);
 
   return [
     verifyApproval,
     approve,
     purchase,
+    refresh,
     isConfirmed,
     pendingTransactions,
     key,
