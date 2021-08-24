@@ -98,7 +98,7 @@ const AddEditPlan = ({
   return (
     <>
       <Button
-        aria-label="add contract"
+        aria-label="add plan"
         color="primary"
         variant="contained"
         size="small"

@@ -7,6 +7,7 @@ import { IProviderSnapshot } from "../sdk-hooks/useProviders";
 const useAdmin = (provider: IProviderSnapshot) => {
   const account = useConnector((state) => state.account);
 
+  const [isPaused, setIsPaused] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -14,8 +15,10 @@ const useAdmin = (provider: IProviderSnapshot) => {
       const contract = new Base(provider.config).schedulerContract;
 
       const providerAddress = await contract.serviceProvider();
+      const isPaused = await contract.paused();
 
       setIsAdmin(account === providerAddress);
+      setIsPaused(isPaused);
     };
 
     action();
@@ -48,7 +51,38 @@ const useAdmin = (provider: IProviderSnapshot) => {
     [provider.config]
   );
 
-  return { isAdmin, addPlan, cancelPlan };
+  const pauseUnpauseContract = useCallback(async () => {
+    const contract = new Base(provider.config).schedulerContract;
+
+    const isPaused = await contract.paused();
+
+    let tx;
+
+    if (!isPaused) {
+      tx = await contract.pause();
+    } else {
+      tx = await contract.unpause();
+    }
+
+    return tx;
+  }, [provider.config]);
+
+  const refresh = useCallback(async () => {
+    const contract = new Base(provider.config).schedulerContract;
+
+    const isPaused = await contract.paused();
+
+    setIsPaused(isPaused);
+  }, [provider.config]);
+
+  return {
+    isAdmin,
+    isPaused,
+    refresh,
+    pauseUnpauseContract,
+    addPlan,
+    cancelPlan,
+  };
 };
 
 export default useAdmin;

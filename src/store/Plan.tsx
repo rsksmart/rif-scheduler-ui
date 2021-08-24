@@ -43,10 +43,11 @@ export enum EApprovalStatus {
   approved,
 }
 
-const Plan: React.FC<{ value: IPlanSnapshot; provider: IProviderSnapshot }> = ({
-  value,
-  provider,
-}) => {
+const Plan: React.FC<{
+  value: IPlanSnapshot;
+  provider: IProviderSnapshot;
+  isPaused: boolean;
+}> = ({ value, provider, isPaused }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -172,6 +173,7 @@ const Plan: React.FC<{ value: IPlanSnapshot; provider: IProviderSnapshot }> = ({
     <>
       <PlanButton
         value={value}
+        disabled={isPaused}
         isConfirmed={isConfirmed}
         onClick={() => setOpen(true)}
       />
