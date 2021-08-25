@@ -17,7 +17,7 @@ const PurchaseWhileSchedule: React.FC<{
   const { enqueueSnackbar } = useSnackbar();
   const isAlreadyConfirmed = useRef(true);
 
-  const [verifyApproval, approve, purchase, isConfirmed] = usePlan(plan);
+  const [verifyApproval, approve, purchase, , isConfirmed] = usePlan(plan);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [approvalStatus, setApprovalStatus] = useState<EApprovalStatus>(
     tokenType === TokenType.ERC20
