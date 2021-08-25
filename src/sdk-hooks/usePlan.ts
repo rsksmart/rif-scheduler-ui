@@ -22,9 +22,21 @@ export const createPlanSnapshot = async (
 ): Promise<IPlanSnapshot> => {
   const isActive = await plan.isActive();
   const remainingExecutions = await plan.getRemainingExecutions();
-  const tokenDecimals = await plan.token.decimals();
-  const tokenSymbol = await plan.token.symbol();
-  const tokenType = plan.token.getType();
+
+  let tokenSymbol;
+  let tokenDecimals;
+  let tokenType;
+
+  try {
+    tokenSymbol = await plan.token.symbol();
+    tokenDecimals = await plan.token.decimals();
+    tokenType = plan.token.getType();
+  } catch (error) {
+    console.error("plan error", error);
+    tokenSymbol = "invalid";
+    tokenDecimals = 0;
+    tokenType = TokenType.ERC20;
+  }
 
   return {
     index: plan.index,
