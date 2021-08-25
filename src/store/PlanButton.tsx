@@ -30,12 +30,18 @@ const useStyles = makeStyles((theme: Theme) =>
 const PlanButton: React.FC<{
   value: IPlanSnapshot;
   isConfirmed: boolean;
+  disabled: boolean;
   onClick?: () => void;
-}> = ({ value, isConfirmed, onClick }) => {
+}> = ({ value, disabled, isConfirmed, onClick }) => {
   const classes = useStyles();
 
   return (
-    <ListItem button className={classes.row} onClick={onClick}>
+    <ListItem
+      disabled={disabled}
+      button
+      className={classes.row}
+      onClick={onClick}
+    >
       <div
         className={classes.part}
         style={{ flexDirection: "row", alignItems: "center" }}

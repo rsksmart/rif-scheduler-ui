@@ -1,7 +1,7 @@
 import { makeStyles, Theme, createStyles } from "@material-ui/core/styles";
 import List from "@material-ui/core/List";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { formatBigNumber } from "../shared/formatters";
 import Plan from "./Plan";
 
@@ -15,6 +15,12 @@ import Chip from "@material-ui/core/Chip";
 import { IProviderSnapshot } from "../sdk-hooks/useProviders";
 import { usePlans } from "../sdk-hooks/usePlans";
 import Loading from "./Loading";
+import useAdmin from "../shared/useAdmin";
+import AddEditPlan from "./AddEditPlan";
+import { Button } from "@material-ui/core";
+import environment from "../shared/environment";
+import { useSnackbar } from "notistack";
+import { getMessageFromCode } from "eth-rpc-errors";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -51,15 +57,47 @@ const PlansList: React.FC<{
   provider: IProviderSnapshot;
 }> = ({ expandedFixed, provider }) => {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const { isAdmin, isPaused, pauseUnpauseContract, refresh } =
+    useAdmin(provider);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isPausing, setIsPausing] = useState<boolean>(false);
 
   const [plans, loadPlans] = usePlans(provider);
 
-  useEffect(() => {
+  const handlePauseUnpause = async () => {
+    setIsPausing(true);
+
+    try {
+      const tx = await pauseUnpauseContract();
+      await tx.wait(environment.CONFIRMATIONS);
+      await refresh();
+
+      setIsPausing(false);
+      enqueueSnackbar("Pause / Unpause confirmed!", {
+        variant: "success",
+      });
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+
+      setIsPausing(false);
+    }
+  };
+
+  const handlePlansLoad = useCallback(() => {
     setIsLoading(true);
     loadPlans().then(() => setIsLoading(false));
   }, [loadPlans]);
+
+  useEffect(() => {
+    handlePlansLoad();
+  }, [handlePlansLoad]);
 
   const [expanded, setExpanded] = useState<boolean>(expandedFixed);
 
@@ -82,7 +120,13 @@ const PlansList: React.FC<{
           style={{ cursor: expandedFixed ? "default" : "pointer" }}
           id={`accordion-header-${provider.index}`}
         >
-          <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              alignItems: "center",
+            }}
+          >
             <div
               style={{
                 display: "flex",
@@ -91,7 +135,9 @@ const PlansList: React.FC<{
               }}
             >
               <Typography className={classes.expanderHeading}>
-                {`Provider #${provider.index + 1}`}
+                {`Provider #${provider.index + 1} ${
+                  isPaused ? "(Paused)" : ""
+                }`}
               </Typography>
               <Typography className={classes.expanderSecondaryHeading}>
                 {`${formatBigNumber(
@@ -110,11 +156,40 @@ const PlansList: React.FC<{
           </div>
         </AccordionSummary>
         <AccordionDetails style={{ padding: 0, flexDirection: "column" }}>
+          <div style={{ display: "flex" }}>
+            {isAdmin && (
+              <div
+                style={{ paddingLeft: 16, paddingRight: 16, paddingBottom: 16 }}
+              >
+                <AddEditPlan provider={provider} onClose={handlePlansLoad} />
+              </div>
+            )}
+            {isAdmin && (
+              <div
+                style={{ paddingLeft: 16, paddingRight: 16, paddingBottom: 16 }}
+              >
+                <Button
+                  aria-label="pause / unpause contract"
+                  color="secondary"
+                  variant="contained"
+                  size="small"
+                  disabled={isPausing}
+                  onClick={handlePauseUnpause}
+                >
+                  {!isPausing && isPaused && "Unpause contract"}
+                  {!isPausing && !isPaused && "Pause contract"}
+                  {isPausing && "Waiting confirmation"}
+                </Button>
+              </div>
+            )}
+          </div>
           <List className={classes.root}>
             {plans.map((plan, index) => (
               <Plan
                 key={`plan-item-${plan.ref.config.contractAddress}-${index}`}
                 value={plan}
+                provider={provider}
+                isPaused={isPaused}
               />
             ))}
           </List>
