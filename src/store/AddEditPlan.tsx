@@ -18,12 +18,25 @@ import { useSnackbar } from "notistack";
 import environment from "../shared/environment";
 import { Typography } from "@material-ui/core";
 import { fromBigNumberToHms } from "../shared/formatters";
+import { Token, TokenType } from "@rsksmart/rif-scheduler-sdk";
+
+const tokenTypeDescription = {
+  [TokenType.ERC20]: "ERC20",
+  [TokenType.ERC677]: "ERC677",
+  [TokenType.RBTC]: "RBTC",
+};
 
 interface IPlanFields {
   price: string;
   window: string;
   gasLimit: string;
   tokenAddress: string;
+}
+
+interface ITokenInfo {
+  symbol: string;
+  decimals: number;
+  type: TokenType;
 }
 
 const AddEditPlan = ({
@@ -37,9 +50,31 @@ const AddEditPlan = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [open, setOpen] = useState(false);
+
   const [fields, setFields] = useState<Partial<IPlanFields> | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<ITokenInfo | null | undefined>(
+    undefined
+  );
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const verifyToken = async () => {
+    try {
+      const tokenAddress = fields!.tokenAddress!.toLowerCase();
+
+      const token = new Token(provider.config, tokenAddress);
+
+      const symbol = await token.symbol();
+      const decimals = await token.decimals();
+      const type = token.getType();
+
+      setTokenInfo({ decimals, symbol, type });
+    } catch (error) {
+      console.log("aaaaa", error);
+
+      setTokenInfo(null);
+    }
+  };
 
   const { addPlan } = useAdmin(provider);
 
@@ -64,6 +99,13 @@ const AddEditPlan = ({
 
     if (isValid) {
       setIsLoading(true);
+
+      await verifyToken();
+
+      if (!tokenInfo) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         const tx = await addPlan(
@@ -93,6 +135,11 @@ const AddEditPlan = ({
 
   const handleFieldChange = (fieldName: string) => (event: any) => {
     setFields((values) => ({ ...values, [fieldName]: event.target.value }));
+  };
+
+  const handleTokenFieldChange = (event: any) => {
+    setFields((values) => ({ ...values, tokenAddress: event.target.value }));
+    setTokenInfo(undefined);
   };
 
   return (
@@ -148,12 +195,22 @@ const AddEditPlan = ({
           <TextField
             margin="dense"
             label="Token"
-            helperText="Add the token address"
+            helperText={
+              !fields?.tokenAddress || tokenInfo === undefined
+                ? "Add the token address"
+                : tokenInfo === null
+                ? "Invalid token"
+                : `${tokenTypeDescription[tokenInfo.type]} / ${
+                    tokenInfo.symbol
+                  }`
+            }
             variant="filled"
             fullWidth
-            onChange={handleFieldChange("tokenAddress")}
+            onChange={handleTokenFieldChange}
             value={fields?.tokenAddress}
+            onBlur={verifyToken}
             disabled={isLoading}
+            error={tokenInfo === null ? true : false}
           />
           <TextField
             margin="dense"
