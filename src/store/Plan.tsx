@@ -31,6 +31,9 @@ import MinusIcon from "@material-ui/icons/RemoveCircleRounded";
 import { TokenType } from "@rsksmart/rif-scheduler-sdk/dist/token";
 import { useSnackbar } from "notistack";
 import { getMessageFromCode } from "eth-rpc-errors";
+import useAdmin from "../shared/useAdmin";
+import { IProviderSnapshot } from "../sdk-hooks/useProviders";
+import environment from "../shared/environment";
 
 const rowStyles = { display: "flex", alignItems: "center", gap: "5px" };
 
@@ -40,18 +43,27 @@ export enum EApprovalStatus {
   approved,
 }
 
-const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
+const Plan: React.FC<{
+  value: IPlanSnapshot;
+  provider: IProviderSnapshot;
+  isPaused: boolean;
+}> = ({ value, provider, isPaused }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { enqueueSnackbar } = useSnackbar();
 
+  const { isAdmin, cancelPlan } = useAdmin(provider);
+
   const [open, setOpen] = useState<boolean>(false);
 
-  const [verifyApproval, approve, purchase, isConfirmed] = usePlan(value.ref);
+  const [verifyApproval, approve, purchase, refresh, isConfirmed] = usePlan(
+    value.ref
+  );
 
   const [buyingExecutions, setBuyingExecutions] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isNormalLoading, setIsLoading] = useState<boolean>(false);
+  const [isCanceling, setIsCanceling] = useState<boolean>(false);
   const [approvalStatus, setApprovalStatus] = useState<EApprovalStatus>(
     value.tokenType === TokenType.ERC20
       ? EApprovalStatus.verify
@@ -60,6 +72,31 @@ const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
 
   const handleClose = () => {
     setOpen(false);
+  };
+
+  const handleCancelPlan = async () => {
+    setIsCanceling(true);
+
+    try {
+      const tx = await cancelPlan(value.index);
+
+      await tx.wait(environment.CONFIRMATIONS);
+
+      await refresh();
+
+      setIsCanceling(false);
+      enqueueSnackbar("Plan cancel confirmed!", {
+        variant: "success",
+      });
+    } catch (error) {
+      const message = getMessageFromCode(error.code, error.message);
+
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
+
+      setIsCanceling(false);
+    }
   };
 
   const handleBuyingExecutionsIncrement = (increment: number) => () => {
@@ -130,10 +167,13 @@ const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
     }
   };
 
+  const isLoading = isNormalLoading || isCanceling;
+
   return (
     <>
       <PlanButton
         value={value}
+        disabled={isPaused}
         isConfirmed={isConfirmed}
         onClick={() => setOpen(true)}
       />
@@ -159,6 +199,16 @@ const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
           </div>
         </DialogTitle>
         <DialogContent>
+          {isCanceling && (
+            <>
+              <Typography variant="subtitle1" color="error" component="p">
+                Waiting for transaction confirmation:
+              </Typography>
+              <Typography variant="subtitle1" color="error" component="p">
+                Please do NOT close this window.
+              </Typography>
+            </>
+          )}
           <TableContainer
             component={Paper}
             elevation={0}
@@ -279,6 +329,17 @@ const Plan: React.FC<{ value: IPlanSnapshot }> = ({ value }) => {
         <DialogActions
           style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 24 }}
         >
+          {isAdmin && (
+            <div style={{ display: "flex", flex: 1 }}>
+              <Button
+                onClick={handleCancelPlan}
+                disabled={isLoading || !value.isActive}
+                color="secondary"
+              >
+                Deactivate plan
+              </Button>
+            </div>
+          )}
           <Button
             color="inherit"
             disabled={isLoading}
