@@ -7,6 +7,7 @@ import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
   KeyboardDateTimePicker,
+  KeyboardDatePicker,
 } from "@material-ui/pickers";
 import { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
@@ -19,7 +20,7 @@ import CardActions from "@material-ui/core/CardActions";
 import ColorSelector from "./ColorSelector";
 import useContracts from "../contracts/useContracts";
 import Typography from "@material-ui/core/Typography";
-import { parseISO, isValid } from "date-fns";
+import { parseISO, isValid, set } from "date-fns";
 import hyphensAndCamelCaseToWords from "../shared/hyphensAndCamelCaseToWords";
 import shallow from "zustand/shallow";
 import ButtonWithLoading from "../shared/ButtonWIthLoading";
@@ -56,6 +57,7 @@ import { usePlans } from "../sdk-hooks/usePlans";
 import { useExecutions } from "../sdk-hooks/useExecutions";
 import { getMessageFromCode } from "eth-rpc-errors";
 import useField from "../shared/useField";
+import { EMidday } from "./cronParser/enums";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -251,6 +253,21 @@ const ScheduleForm = () => {
     setIsLoading(true);
 
     try {
+      let hours = cronFields.value!.hour;
+      if (cronFields.value!.midday === EMidday.AM)
+        hours = hours === 12 ? 0 : hours;
+
+      if (cronFields.value!.midday === EMidday.PM)
+        hours = hours === 12 ? 12 : hours + 12;
+
+      const executeAtResult = isRecurrent
+        ? set(parseISO(executeAt.value!), {
+            hours,
+            minutes: cronFields.value!.minute,
+            seconds: 0,
+          })
+        : set(parseISO(executeAt.value!), { seconds: 0 });
+
       await schedule({
         title: title.value!,
         network: connectedToNetwork!,
@@ -258,7 +275,7 @@ const ScheduleForm = () => {
         contractMethod: contractAction.value!,
         contractFields: contractFields.value!,
         color: color.value!,
-        executeAtISO: executeAt.value!,
+        executeAtISO: executeAtResult.toISOString(),
         providerAddress: providerAddress.value!,
         providerPlanIndex: providerPlanIndex.value!,
         value: "0",
@@ -344,28 +361,56 @@ const ScheduleForm = () => {
                 flexWrap: "wrap",
               }}
             >
-              <KeyboardDateTimePicker
-                disabled={isLoading}
-                margin="dense"
-                id="executeAt"
-                inputVariant="filled"
-                label={isRecurrent.value ? "Starts At" : "Execute At"}
-                format="MM/dd/yyyy HH:mm"
-                fullWidth={true}
-                style={{ flex: 1, minWidth: 200 }}
-                value={executeAt.value ? parseISO(executeAt.value) : null}
-                onChange={(date: Date | null) => {
-                  executeAt.onChange({
-                    target: {
-                      value: date && isValid(date) ? date.toISOString() : null,
-                    },
-                  });
-                }}
-                KeyboardButtonProps={{
-                  "aria-label": "change execute at",
-                }}
-                error={executeAt.error}
-              />
+              {!isRecurrent.value && (
+                <KeyboardDateTimePicker
+                  disabled={isLoading}
+                  margin="dense"
+                  id="executeAt"
+                  inputVariant="filled"
+                  label={"Execute At"}
+                  format="MM/dd/yyyy HH:mm"
+                  fullWidth={true}
+                  style={{ flex: 1, minWidth: 200 }}
+                  value={executeAt.value ? parseISO(executeAt.value) : null}
+                  onChange={(date: Date | null) => {
+                    executeAt.onChange({
+                      target: {
+                        value:
+                          date && isValid(date) ? date.toISOString() : null,
+                      },
+                    });
+                  }}
+                  KeyboardButtonProps={{
+                    "aria-label": "change execute at",
+                  }}
+                  error={executeAt.error}
+                />
+              )}
+              {isRecurrent.value && (
+                <KeyboardDatePicker
+                  disabled={isLoading}
+                  margin="dense"
+                  id="executeAt"
+                  inputVariant="filled"
+                  label={"Starts At"}
+                  format="MM/dd/yyyy"
+                  fullWidth={true}
+                  style={{ flex: 1, minWidth: 200 }}
+                  value={executeAt.value ? parseISO(executeAt.value) : null}
+                  onChange={(date: Date | null) => {
+                    executeAt.onChange({
+                      target: {
+                        value:
+                          date && isValid(date) ? date.toISOString() : null,
+                      },
+                    });
+                  }}
+                  KeyboardButtonProps={{
+                    "aria-label": "change start at",
+                  }}
+                  error={executeAt.error}
+                />
+              )}
               <CustomTooltip
                 open={cronFieldFocused}
                 title={

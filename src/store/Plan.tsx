@@ -169,6 +169,13 @@ const Plan: React.FC<{
 
   const isLoading = isNormalLoading || isCanceling;
 
+  if (value.index.eq(12))
+    console.log(
+      "value",
+      value.pricePerExecution.toString(),
+      value.tokenDecimals
+    );
+
   return (
     <>
       <PlanButton

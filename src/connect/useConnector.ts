@@ -76,6 +76,8 @@ const useConnector = create<IUseConnector>((set, get) => ({
 
         const isConnected = account && signer ? true : false;
 
+        console.log("isConnected", isConnected, account, signer);
+
         if (!isConnected) {
           get().disconnect();
           return;
