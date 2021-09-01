@@ -35,6 +35,7 @@ export const createPlanSnapshot = async (
     if (tokenSymbol === "RBTC") {
       console.log(
         "lalalala",
+        plan.token.address,
         tokenSymbol,
         plan.index.toNumber(),
         tokenDecimals

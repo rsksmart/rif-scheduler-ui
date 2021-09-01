@@ -2524,10 +2524,10 @@
     "@openzeppelin/contracts" "^4.1.0"
     "@rsksmart/erc677" "^2.0.0"
 
-"@rsksmart/rif-scheduler-sdk@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@rsksmart/rif-scheduler-sdk/-/rif-scheduler-sdk-2.0.1.tgz#f77584e1a2a207a7464a3e0f0d538867f27def8c"
-  integrity sha512-Mb0jOIRt66x6iEYRJ3sbBrpskGb/vkjWH+ADYAZG6PepXP+WikqtELgxuew+7hm/jrVfJJDzJJRVveIb6zWwew==
+"@rsksmart/rif-scheduler-sdk@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@rsksmart/rif-scheduler-sdk/-/rif-scheduler-sdk-2.0.2.tgz#9fd296b03160300f60cccfdb1c56a1654ead9897"
+  integrity sha512-nvB/mVQ4xGFg36qiu2PfR3uJBaTGGdP+Ip81eqH6WTOcHPTFdgdCnP0i4uBoFTAPjNBM9s+3NapRxWzRSSUosw==
   dependencies:
     "@openzeppelin/test-helpers" "^0.5.11"
     "@rsksmart/rif-scheduler-contracts" "^1.0.0-beta.2"

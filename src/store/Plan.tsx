@@ -173,7 +173,8 @@ const Plan: React.FC<{
     console.log(
       "value",
       value.pricePerExecution.toString(),
-      value.tokenDecimals
+      value.tokenDecimals,
+      value.tokenSymbol
     );
 
   return (
