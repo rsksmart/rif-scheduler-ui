@@ -65,7 +65,6 @@ const AddEditPlan = ({
       const token = new Token(provider.config, tokenAddress);
 
       const type = token.getType();
-      console.log("type", tokenTypeDescription[type]);
 
       const decimals = await token.decimals();
 

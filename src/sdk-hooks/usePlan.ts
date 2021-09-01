@@ -31,16 +31,6 @@ export const createPlanSnapshot = async (
     tokenSymbol = await plan.token.symbol();
     tokenDecimals = await plan.token.decimals();
     tokenType = plan.token.getType();
-
-    if (tokenSymbol === "RBTC") {
-      console.log(
-        "lalalala",
-        plan.token.address,
-        tokenSymbol,
-        plan.index.toNumber(),
-        tokenDecimals
-      );
-    }
   } catch (error) {
     console.error("plan error", error);
     tokenSymbol = "invalid";

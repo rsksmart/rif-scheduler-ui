@@ -144,8 +144,6 @@ export const validateBeforeSchedule = async (
     environment.MINIMUM_TIME_BEFORE_EXECUTION
   );
 
-  console.log("executeAt", executeAt, minimumDate);
-
   if (executeAt <= minimumDate) {
     result.push({
       message: `You need to schedule at least ${fromBigNumberToHms(
