@@ -37,14 +37,16 @@ const ScheduleFormDialog = ({
   const [currentAlerts, setCurrentAlerts] = useState(alerts);
 
   useEffect(() => {
+    if (JSON.stringify(alerts) === JSON.stringify(currentAlerts)) return;
+
     setCurrentAlerts(alerts);
-  }, [alerts]);
+  }, [alerts, currentAlerts]);
 
   const open = alerts.length > 0 ? true : false;
 
   if (alerts.length === 0) return null;
 
-  const hasErrors = currentAlerts.some((x) => x.severity === "error")
+  const hasErrors = currentAlerts.some((x) => x.severity === "error");
 
   const handleRevalidate = (index: number) => () => {
     setCurrentAlerts((prev) => {

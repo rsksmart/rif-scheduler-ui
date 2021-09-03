@@ -18,6 +18,7 @@ import { IExecutionSnapshot, useExecution } from "../sdk-hooks/useExecution";
 import { BigNumber } from "ethers";
 import { getMessageFromCode } from "eth-rpc-errors";
 import { useSnackbar } from "notistack";
+import { EExecutionState } from "@rsksmart/rif-scheduler-sdk";
 
 const useRowStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -75,6 +76,13 @@ export const ExecutionButton: React.FC<{
     if (onClick) onClick();
   };
 
+  const disabledRefresh =
+    isLoading ||
+    !isConfirmed ||
+    ![EExecutionState.NotScheduled, EExecutionState.Scheduled].includes(
+      item.state ?? EExecutionState.NotScheduled
+    );
+
   return (
     <ListItem button className={classes.row} onClick={handleItemClick}>
       <div
@@ -113,9 +121,13 @@ export const ExecutionButton: React.FC<{
         <IconButton
           edge="end"
           onClick={handleUpdateStatusClick}
-          disabled={isLoading || !isConfirmed}
+          disabled={disabledRefresh}
         >
-          <RefreshIcon style={{ color: item.index.color }} />
+          <RefreshIcon
+            style={{
+              color: disabledRefresh ? "rgba(0, 0, 0, 0.26)" : item.index.color,
+            }}
+          />
         </IconButton>
       </ListItemSecondaryAction>
     </ListItem>

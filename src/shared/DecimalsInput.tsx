@@ -24,7 +24,7 @@ const DecimalsInput = (props: INumberFormatCustomProps) => {
       thousandSeparator
       isNumericString
       allowNegative={false}
-      decimalScale={4}
+      decimalScale={8}
       prefix=""
     />
   );

@@ -230,7 +230,16 @@ const ExecutionInfo: React.FC<{
                       aria-label="refresh status"
                       size="small"
                       onClick={handleUpdateStatusClick}
-                      disabled={isLoading || !isConfirmed}
+                      disabled={
+                        isLoading ||
+                        !isConfirmed ||
+                        ![
+                          EExecutionState.NotScheduled,
+                          EExecutionState.Scheduled,
+                        ].includes(
+                          execution.state ?? EExecutionState.NotScheduled
+                        )
+                      }
                     >
                       <RefreshIcon fontSize="inherit" />
                     </IconButton>

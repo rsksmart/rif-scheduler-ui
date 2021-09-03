@@ -64,13 +64,15 @@ const AddEditPlan = ({
 
       const token = new Token(provider.config, tokenAddress);
 
-      const symbol = await token.symbol();
-      const decimals = await token.decimals();
       const type = token.getType();
+
+      const decimals = await token.decimals();
+
+      const symbol = await token.symbol();
 
       setTokenInfo({ decimals, symbol, type });
     } catch (error) {
-      console.log("aaaaa", error);
+      console.error("verifyToken", error);
 
       setTokenInfo(null);
     }
@@ -109,7 +111,7 @@ const AddEditPlan = ({
 
       try {
         const tx = await addPlan(
-          utils.parseEther(fields!.price!),
+          utils.parseUnits(fields!.price!, tokenInfo.decimals),
           fields!.window!,
           fields!.gasLimit!,
           fields!.tokenAddress!.toLowerCase()

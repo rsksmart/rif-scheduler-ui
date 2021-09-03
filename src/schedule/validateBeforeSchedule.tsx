@@ -1,4 +1,4 @@
-import { addSeconds, parseISO } from "date-fns";
+import { addSeconds, parseISO, set } from "date-fns";
 import { BigNumber, utils } from "ethers";
 import { Execution, RIFScheduler } from "@rsksmart/rif-scheduler-sdk";
 import { IContract } from "../contracts/useContracts";
@@ -9,6 +9,7 @@ import { formatBigNumber, fromBigNumberToHms } from "../shared/formatters";
 import { IScheduleFormDialogAlert } from "./ScheduleFormDialog";
 import { ICronField } from "./cronParser/convertToCronExpression";
 import PurchaseWhileScheduleButton from "./PurchaseWhileScheduleButton";
+import { EMidday } from "./cronParser/enums";
 
 export interface IValidationInput {
   executeAt: string;
@@ -41,6 +42,21 @@ export const validateBeforeSchedule = async (
   const executionsQuantity = validationInput.isRecurrent
     ? validationInput.cronQuantity
     : 1;
+
+  let hours = validationInput.cronFields.hour;
+  if (validationInput.cronFields.midday === EMidday.AM)
+    hours = hours === 12 ? 0 : hours;
+
+  if (validationInput.cronFields.midday === EMidday.PM)
+    hours = hours === 12 ? 12 : hours + 12;
+
+  const executeAt = validationInput.isRecurrent
+    ? set(parseISO(validationInput.executeAt), {
+        hours,
+        minutes: validationInput.cronFields.minute,
+        seconds: 0,
+      })
+    : set(parseISO(validationInput.executeAt), { seconds: 0 });
 
   // validate purchased execution
   const hasAnExecutionLeft = (await plan.getRemainingExecutions()).gte(
@@ -88,7 +104,7 @@ export const validateBeforeSchedule = async (
     plan,
     validationInput.contract.address,
     encodedFunctionCall,
-    parseISO(validationInput.executeAt),
+    executeAt,
     valueToTransfer,
     validationInput.myAccountAddress
   );
@@ -128,7 +144,7 @@ export const validateBeforeSchedule = async (
     environment.MINIMUM_TIME_BEFORE_EXECUTION
   );
 
-  if (parseISO(validationInput.executeAt) <= minimumDate) {
+  if (executeAt <= minimumDate) {
     result.push({
       message: `You need to schedule at least ${fromBigNumberToHms(
         BigNumber.from(environment.MINIMUM_TIME_BEFORE_EXECUTION)

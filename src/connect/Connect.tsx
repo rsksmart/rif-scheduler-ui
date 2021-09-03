@@ -50,7 +50,7 @@ const Connect = () => {
           }),
         ]);
 
-      const { provider, disconnect } = await timeout(rLogin.connect(), 3000);
+      const { provider, disconnect } = await timeout(rLogin.connect(), 30000);
 
       connect(provider, disconnect).then(() => history.replace(from));
     } catch (error) {
