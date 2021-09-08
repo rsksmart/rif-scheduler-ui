@@ -268,8 +268,6 @@ const ScheduleForm = () => {
           })
         : set(parseISO(executeAt.value!), { seconds: 0 });
 
-      console.log("executeAtResult", executeAtResult);
-
       await schedule({
         title: title.value!,
         network: connectedToNetwork!,
