@@ -260,13 +260,15 @@ const ScheduleForm = () => {
       if (cronFields.value!.midday === EMidday.PM)
         hours = hours === 12 ? 12 : hours + 12;
 
-      const executeAtResult = isRecurrent
+      const executeAtResult = isRecurrent.value!
         ? set(parseISO(executeAt.value!), {
             hours,
             minutes: cronFields.value!.minute,
             seconds: 0,
           })
         : set(parseISO(executeAt.value!), { seconds: 0 });
+
+      console.log("executeAtResult", executeAtResult);
 
       await schedule({
         title: title.value!,
