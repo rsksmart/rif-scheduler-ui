@@ -43,19 +43,39 @@ export interface IUseIndexedExecutions {
   indexedExecutions: {
     [key: string]: IExecutionIndex;
   };
-  setIndexedExecution: (key: string, indexedExecution: IExecutionIndex) => void;
+  setIndexedExecutions: (
+    txHash: string,
+    index: IExecutionIndex,
+    executions: Execution[]
+  ) => void;
 }
 
 export const useIndexedExecutionsStore = create<IUseIndexedExecutions>(
   persist(
     (set, get) => ({
       indexedExecutions: {},
-      setIndexedExecution: (key: string, indexedExecution: IExecutionIndex) => {
+      setIndexedExecutions: (
+        txHash: string,
+        index: IExecutionIndex,
+        executions: Execution[]
+      ) => {
+        let result = get().indexedExecutions;
+
+        for (const current of executions) {
+          const key = getExecutionKey(current);
+
+          result = {
+            ...result,
+            [key]: {
+              ...index,
+              id: current.getId(),
+              scheduledTxHash: txHash,
+              executeAtISO: current.executeAt.toISOString(),
+            },
+          };
+        }
         set((state) => ({
-          indexedExecutions: {
-            ...state.indexedExecutions,
-            [key]: indexedExecution,
-          },
+          indexedExecutions: result,
         }));
       },
     }),
@@ -91,8 +111,8 @@ export const useExecutions = () => {
 
   const registerTxWithKey = useTransactionsStore((state) => state.register);
 
-  const [indexedExecutions, setIndexedExecution] = useIndexedExecutionsStore(
-    (store) => [store.indexedExecutions, store.setIndexedExecution],
+  const [indexedExecutions, setIndexedExecutions] = useIndexedExecutionsStore(
+    (store) => [store.indexedExecutions, store.setIndexedExecutions],
     shallow
   );
 
@@ -149,6 +169,8 @@ export const useExecutions = () => {
 
   const schedule = useCallback(
     async (index: IExecutionIndex) => {
+      console.log("schedule index", index);
+
       const provider = providers.find(
         (x) => x.config.contractAddress === index.providerAddress
       );
@@ -172,28 +194,19 @@ export const useExecutions = () => {
           index.cronExpression!,
           index.quantity!
         );
+
+        console.log({
+          executions,
+          quantity: index.quantity,
+        });
+
         tx = (await scheduler.scheduleMany(executions)) as any;
 
-        for (const current of executions) {
-          const key = getExecutionKey(current);
-
-          setIndexedExecution(key, {
-            ...index,
-            id: current.getId(),
-            scheduledTxHash: tx.hash,
-            executeAtISO: current.executeAt.toISOString(),
-          });
-        }
+        setIndexedExecutions(tx.hash, index, executions);
       } else {
         tx = (await scheduler.schedule(execution)) as any;
 
-        const key = getExecutionKey(execution);
-
-        setIndexedExecution(key, {
-          ...index,
-          id: execution.getId(),
-          scheduledTxHash: tx.hash,
-        });
+        setIndexedExecutions(tx.hash, index, [execution]);
       }
 
       const scheduleKey = getExecutionScheduleKey(
@@ -215,7 +228,7 @@ export const useExecutions = () => {
       getExecution,
       providers,
       registerTxWithKey,
-      setIndexedExecution,
+      setIndexedExecutions,
     ]
   );
 
