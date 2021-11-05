@@ -75,6 +75,9 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: 0,
       boxShadow: scrolled ? "0px 5px 20px -5px rgb(0 0 0 / 25%)" : "none",
     }),
+    setBehind: {
+      zIndex: 1
+    }
   })
 );
 
@@ -94,7 +97,7 @@ const menuIndexes: { [key: string]: number } = {
   "/account": ESection.Account,
 };
 
-const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
+const Layout: React.FC<{ hideMenu?: boolean, setBehind?: boolean }> = ({ children, hideMenu, setBehind }) => {
   const location = useLocation();
   const scrolled = useScrollTrigger({
     disableHysteresis: true,
@@ -104,7 +107,7 @@ const Layout: React.FC<{ hideMenu?: boolean }> = ({ children, hideMenu }) => {
 
   return (
     <>
-      <AppBar position="sticky" className={classes.appBar} elevation={0}>
+      <AppBar position="sticky" className={classes.appBar + (setBehind ? ' '  + classes.setBehind : '')} elevation={0}>
         <Toolbar className={classes.toolbar}>
           <Logo className={classes.logo} />
           <Typography
