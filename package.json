@@ -1,6 +1,6 @@
 {
   "name": "rif-scheduler-console",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "homepage": ".",
   "dependencies": {
@@ -10,7 +10,7 @@
     "@material-ui/lab": "^4.0.0-alpha.58",
     "@material-ui/pickers": "^3.3.10",
     "@rsksmart/rif-scheduler-sdk": "^2.0.2",
-    "@rsksmart/rlogin": "^1.0.8",
+    "@rsksmart/rlogin-essentials": "^1.0.0",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -18,7 +18,6 @@
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
-    "@walletconnect/web3-provider": "^1.4.1",
     "bignumber.js": "^9.0.1",
     "cron-converter": "^1.0.1",
     "cron-parser": "^3.5.0",
