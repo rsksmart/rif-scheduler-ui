@@ -66,7 +66,7 @@ const Connect = () => {
   }, [handleConnect]);
 
   return (
-    <Layout hideMenu>
+    <Layout hideMenu setBehind>
       {!isLoading && (
         <Card
           className={classes.root}
