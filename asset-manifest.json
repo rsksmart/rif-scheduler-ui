@@ -1,19 +1,19 @@
 {
   "files": {
-    "main.js": "./static/js/main.3240a047.chunk.js",
-    "main.js.map": "./static/js/main.3240a047.chunk.js.map",
+    "main.js": "./static/js/main.3accb849.chunk.js",
+    "main.js.map": "./static/js/main.3accb849.chunk.js.map",
     "runtime-main.js": "./static/js/runtime-main.b3b238d4.js",
     "runtime-main.js.map": "./static/js/runtime-main.b3b238d4.js.map",
-    "static/js/2.b4c680a8.chunk.js": "./static/js/2.b4c680a8.chunk.js",
-    "static/js/2.b4c680a8.chunk.js.map": "./static/js/2.b4c680a8.chunk.js.map",
+    "static/js/2.2fecb5c7.chunk.js": "./static/js/2.2fecb5c7.chunk.js",
+    "static/js/2.2fecb5c7.chunk.js.map": "./static/js/2.2fecb5c7.chunk.js.map",
     "index.html": "./index.html",
-    "static/js/2.b4c680a8.chunk.js.LICENSE.txt": "./static/js/2.b4c680a8.chunk.js.LICENSE.txt",
+    "static/js/2.2fecb5c7.chunk.js.LICENSE.txt": "./static/js/2.2fecb5c7.chunk.js.LICENSE.txt",
     "static/media/contractBolt.5c67e21c.svg": "./static/media/contractBolt.5c67e21c.svg",
     "static/media/lock.4473d54d.svg": "./static/media/lock.4473d54d.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.b3b238d4.js",
-    "static/js/2.b4c680a8.chunk.js",
-    "static/js/main.3240a047.chunk.js"
+    "static/js/2.2fecb5c7.chunk.js",
+    "static/js/main.3accb849.chunk.js"
   ]
 }
